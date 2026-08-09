@@ -271,7 +271,9 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .apply-section h2 { margin: 23px 0 25px; font-family: "Syne Variable", sans-serif; font-size: clamp(65px, 9vw, 145px); font-weight: 700; letter-spacing: -.08em; line-height: .78; text-transform: uppercase; }
 .apply-section h2 em { color: var(--acid); font-style: normal; }
 .apply-section p { max-width: 540px; margin: 0 0 32px; color: #b1b4ac; font-size: 16px; line-height: 1.7; }
-.apply-section button { display: flex; align-items: center; gap: 18px; padding: 18px 25px; color: #95998f; border: 1px solid #484d42; background: #1b1e18; font: 800 11px/1 "Manrope Variable", sans-serif; letter-spacing: .1em; text-transform: uppercase; cursor: not-allowed; }
+.apply-cta { display: flex; align-items: center; gap: 18px; padding: 18px 25px; color: #11130f; border: 1px solid var(--acid); background: var(--acid); font: 800 11px/1 "Manrope Variable", sans-serif; letter-spacing: .1em; text-transform: uppercase; transition: transform .25s,box-shadow .25s; }
+.apply-cta:hover { transform:translateY(-3px);box-shadow:0 14px 40px rgba(216,255,62,.16); }
+.apply-cta svg { width:18px;fill:none;stroke:currentColor;stroke-width:1.5; }
 .apply-section small { margin-top: 16px; color: #8e9288; font-size: 11px; }
 .apply-section.is-visible::before { animation: applyPulse 4s ease-in-out infinite; }
 

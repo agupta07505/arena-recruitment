@@ -145,10 +145,10 @@ export default function Home() {
           Applications are being prepared. Explore the roles now and return when
           the recruitment desk goes live.
         </p>
-        <button type="button" disabled aria-describedby="application-status">
-          Applications open soon <ArrowUpRight />
-        </button>
-        <small id="application-status">Campaign dates will be announced by club leadership.</small>
+        <a className="apply-cta" href="/auth" aria-describedby="application-status">
+          Create applicant account <ArrowUpRight />
+        </a>
+        <small id="application-status">Account access is ready. Campaign dates will be announced by club leadership.</small>
       </section>
 
       <footer>

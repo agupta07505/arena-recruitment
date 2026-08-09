@@ -2,7 +2,7 @@
 
 The recruitment platform for the operational team supporting the Association for Recreation, Esports, and Athletics at IIIT Bhopal.
 
-## Current milestone
+## Implemented milestones
 
 - Public club identity and Year‑1 goals
 - Equal sports and esports division presentation
@@ -10,8 +10,12 @@ The recruitment platform for the operational team supporting the Association for
 - Public leadership structure
 - Scholar ID, gender, and role eligibility validation primitives
 - Responsive and reduced-motion friendly presentation
+- Versioned Supabase schema and local seed data
+- Row Level Security for applicants, reviewers, interviewers, observers, and admins
+- Google OAuth and verified email/password authentication entry points
+- Protected applicant workspace shell
 
-The application CTA deliberately remains disabled until campaign dates and Supabase are configured.
+The recruitment campaign is seeded as an unpublished draft until dates and final wording are confirmed.
 
 ## Run locally
 
@@ -33,6 +37,21 @@ npm run build
 
 Copy `.env.example` to `.env.local` and fill values only when the corresponding service is connected. Never commit secrets or applicant exports.
 
+Use the Project URL and publishable key from the Supabase Connect dialog. Google OAuth also needs to be enabled in Supabase Auth with `/auth/callback` included in the redirect allow-list.
+
+## Local database
+
+The local Supabase stack requires Docker Desktop or Podman:
+
+```bash
+npm run supabase:start
+npm run supabase:reset
+npm run supabase:lint
+npm run supabase:types
+```
+
+`supabase:reset` recreates the local database from the versioned migrations and development seed. Never run a linked reset against production.
+
 ## Next milestone
 
-Set up Supabase migrations and Row Level Security for profiles, campaigns, positions, applications, and answers. Then add Google/email authentication and the reusable applicant profile flow.
+Build the reusable applicant profile editor, draft autosave, eligibility-aware position selection, and independent role application forms.
