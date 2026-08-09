@@ -34,10 +34,6 @@ export default async function AuthPage({ searchParams }: AuthPageProps) {
           Sign in once, build your reusable student profile, and submit independent
           applications for every position you are eligible for.
         </p>
-        <div className={styles.securityNote}>
-          <strong>Private by design</strong>
-          <span>Applicants see only their own records. Scores and internal reviewer comments remain staff-only.</span>
-        </div>
       </section>
 
       <section className={styles.authPanel} aria-labelledby="auth-title">
