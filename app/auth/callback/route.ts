@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
     : "/applicant";
 
   if (!isSupabaseConfigured()) {
-    return NextResponse.redirect(new URL("/auth?error=Supabase%20is%20not%20configured", requestUrl));
+    return NextResponse.redirect(new URL("/auth/sign-in?error=Supabase%20is%20not%20configured", requestUrl));
   }
 
   if (code) {
@@ -20,5 +20,5 @@ export async function GET(request: NextRequest) {
     if (!error) return NextResponse.redirect(new URL(safeNext, requestUrl));
   }
 
-  return NextResponse.redirect(new URL("/auth?error=Authentication%20could%20not%20be%20completed", requestUrl));
+  return NextResponse.redirect(new URL("/auth/sign-in?error=Authentication%20could%20not%20be%20completed", requestUrl));
 }

@@ -10,32 +10,32 @@ const credentialsSchema = z.object({
   password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
-function authRedirect(kind: "error" | "message", message: string): never {
-  redirect(`/auth?${kind}=${encodeURIComponent(message)}`);
+function authRedirect(path: "/auth/sign-in" | "/auth/sign-up", kind: "error" | "message", message: string): never {
+  redirect(`${path}?${kind}=${encodeURIComponent(message)}`);
 }
 
-function assertConfigured() {
+function assertConfigured(path: "/auth/sign-in" | "/auth/sign-up") {
   if (!isSupabaseConfigured()) {
-    authRedirect("error", "Supabase must be configured before authentication can be used.");
+    authRedirect(path, "error", "Supabase must be configured before authentication can be used.");
   }
 }
 
 export async function signInAction(formData: FormData) {
-  assertConfigured();
+  assertConfigured("/auth/sign-in");
   const parsed = credentialsSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),
   });
-  if (!parsed.success) authRedirect("error", parsed.error.issues[0]?.message ?? "Invalid credentials.");
+  if (!parsed.success) authRedirect("/auth/sign-in", "error", parsed.error.issues[0]?.message ?? "Invalid credentials.");
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword(parsed.data);
-  if (error) authRedirect("error", error.message);
+  if (error) authRedirect("/auth/sign-in", "error", error.message);
   redirect("/applicant");
 }
 
 export async function signUpAction(formData: FormData) {
-  assertConfigured();
+  assertConfigured("/auth/sign-up");
   const parsed = credentialsSchema.extend({
     fullName: z.string().trim().min(2, "Enter your full name."),
   }).safeParse({
@@ -43,7 +43,7 @@ export async function signUpAction(formData: FormData) {
     fullName: formData.get("fullName"),
     password: formData.get("password"),
   });
-  if (!parsed.success) authRedirect("error", parsed.error.issues[0]?.message ?? "Invalid signup details.");
+  if (!parsed.success) authRedirect("/auth/sign-up", "error", parsed.error.issues[0]?.message ?? "Invalid signup details.");
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({
@@ -54,18 +54,19 @@ export async function signUpAction(formData: FormData) {
       emailRedirectTo: `${getSiteUrl()}/auth/callback?next=/applicant`,
     },
   });
-  if (error) authRedirect("error", error.message);
-  authRedirect("message", "Check your email to verify your account, then sign in.");
+  if (error) authRedirect("/auth/sign-up", "error", error.message);
+  authRedirect("/auth/sign-in", "message", "Check your email to verify your account, then sign in.");
 }
 
-export async function signInWithGoogleAction() {
-  assertConfigured();
+export async function signInWithGoogleAction(formData: FormData) {
+  const path = formData.get("authMode") === "sign-up" ? "/auth/sign-up" : "/auth/sign-in";
+  assertConfigured(path);
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo: `${getSiteUrl()}/auth/callback?next=/applicant` },
   });
-  if (error || !data.url) authRedirect("error", error?.message ?? "Google sign-in could not start.");
+  if (error || !data.url) authRedirect(path, "error", error?.message ?? "Google authentication could not start.");
   redirect(data.url);
 }
 

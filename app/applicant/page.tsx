@@ -9,10 +9,10 @@ import styles from "./applicant.module.css";
 export const dynamic = "force-dynamic";
 
 export default async function ApplicantPage() {
-  if (!isSupabaseConfigured()) redirect("/auth");
+  if (!isSupabaseConfigured()) redirect("/auth/sign-in");
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/auth");
+  if (!user) redirect("/auth/sign-in");
 
   const { data: profile } = await supabase
     .from("profiles")
