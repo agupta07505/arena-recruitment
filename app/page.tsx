@@ -1,6 +1,7 @@
 import { BrandMark } from "@/components/brand-mark";
 import { EsportHudVisual, SportMotionVisual } from "@/components/arena-visuals";
 import { ArrowDown, ArrowUpRight } from "@/components/icons";
+import { MotionSystem } from "@/components/motion-system";
 import { Openings } from "@/components/openings";
 import { positions, totalOpenings } from "@/lib/recruitment";
 
@@ -27,6 +28,7 @@ const events = [
 export default function Home() {
   return (
     <main>
+      <MotionSystem />
       <header className="site-header">
         <a href="#top"><BrandMark /></a>
         <nav aria-label="Main navigation">
@@ -67,13 +69,13 @@ export default function Home() {
       </section>
 
       <section className="stat-rail" aria-label="Confirmed recruitment configuration">
-        <div><strong>{String(positions.length).padStart(2, "0")}</strong><small>recruitment roles</small></div>
-        <div><strong>{totalOpenings}</strong><small>confirmed openings</small></div>
-        <div><strong>01</strong><small>shared applicant profile</small></div>
+        <div data-reveal><strong>{String(positions.length).padStart(2, "0")}</strong><small>recruitment roles</small></div>
+        <div data-reveal><strong>{totalOpenings}</strong><small>confirmed openings</small></div>
+        <div data-reveal><strong>01</strong><small>shared applicant profile</small></div>
       </section>
 
       <section className="manifesto section" id="manifesto">
-        <div className="section-heading reveal">
+        <div className="section-heading reveal" data-reveal>
           <div>
             <span className="eyebrow"><b>01</b> The playing field</span>
             <h2>Two arenas.<br />One standard.</h2>
@@ -84,7 +86,7 @@ export default function Home() {
           </p>
         </div>
 
-        <div className="arena-split">
+        <div className="arena-split" data-reveal>
           <article className="arena-panel sport-panel">
             <span className="panel-number">01</span>
             <div className="field-lines" aria-hidden="true"><i /><i /><i /></div>
@@ -107,7 +109,7 @@ export default function Home() {
           </article>
         </div>
 
-        <div className="event-strip">
+        <div className="event-strip" data-reveal>
           <span>Year one program</span>
           <div>{events.map((event) => <b key={event}>{event}</b>)}</div>
         </div>
@@ -116,7 +118,7 @@ export default function Home() {
       <Openings />
 
       <section className="leadership section" id="leadership">
-        <div className="leadership-intro">
+        <div className="leadership-intro" data-reveal="left">
           <span className="eyebrow"><b>03</b> Command structure</span>
           <h2>Built to support.<br />Ready to lead.</h2>
           <p>
@@ -126,7 +128,7 @@ export default function Home() {
         </div>
         <div className="leader-list">
           {leaders.map(([role, name], index) => (
-            <div className="leader-row" key={name}>
+            <div className="leader-row" data-reveal key={name}>
               <span>{String(index + 1).padStart(2, "0")}</span>
               <small>{role}</small>
               <strong>{name}</strong>
@@ -135,7 +137,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="apply-section" id="apply">
+      <section className="apply-section" data-reveal id="apply">
         <div className="apply-beam" aria-hidden="true" />
         <span className="eyebrow">Your call time is now</span>
         <h2>Step into<br />the <em>A.R.E.N.A.</em></h2>

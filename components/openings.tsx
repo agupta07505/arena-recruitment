@@ -25,7 +25,7 @@ export function Openings() {
 
   return (
     <section className="openings section" id="openings">
-      <div className="section-heading reveal">
+      <div className="section-heading reveal" data-reveal>
         <div>
           <span className="eyebrow"><b>02</b> Recruitment desk</span>
           <h2>Find your place<br />behind the play.</h2>
@@ -36,7 +36,7 @@ export function Openings() {
         </p>
       </div>
 
-      <div className="role-filters" role="group" aria-label="Filter openings by team">
+      <div className="role-filters" data-reveal role="group" aria-label="Filter openings by team">
         {filters.map((item) => (
           <button
             className={filter === item.value ? "active" : ""}
@@ -49,7 +49,7 @@ export function Openings() {
         ))}
       </div>
 
-      <div className="roles-grid" aria-live="polite">
+      <div className="roles-grid" data-reveal aria-live="polite">
         {shownPositions.map((position, index) => (
           <article className={`role-card role-${position.division}`} key={position.slug}>
             <div className="role-topline">
