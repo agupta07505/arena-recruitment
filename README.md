@@ -13,7 +13,8 @@ The recruitment platform for the operational team supporting the Association for
 - Versioned Supabase schema and local seed data
 - Row Level Security for applicants, reviewers, interviewers, observers, and admins
 - Google OAuth and verified email/password authentication entry points
-- Protected applicant workspace shell
+- Protected applicant workspace with reusable autosaving profiles
+- Eligibility-aware position selection and independent role application drafts
 
 The recruitment campaign is seeded as an unpublished draft until dates and final wording are confirmed.
 
@@ -54,4 +55,4 @@ npm run supabase:types
 
 ## Next milestone
 
-Build the reusable applicant profile editor, draft autosave, eligibility-aware position selection, and independent role application forms.
+Add final application review and submission receipts, status timelines, withdrawal, and applicant notifications.
