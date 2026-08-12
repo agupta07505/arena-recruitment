@@ -7,6 +7,7 @@ import {
   getProfileReadiness,
   normalizeScholarId,
   profileDraftSchema,
+  submissionSchema,
   type ProfileDraft,
 } from "@/lib/recruitment-validation";
 import { createClient } from "@/lib/supabase/server";
@@ -17,6 +18,7 @@ export type ApplicantActionResult = {
   savedAt?: string;
   applicationId?: string;
   readiness?: number;
+  receipt?: string;
 };
 
 async function getAuthenticatedApplicant() {
@@ -152,4 +154,73 @@ export async function saveApplicationAnswerAction(input: z.infer<typeof applicat
 
   if (error) return { ok: false, message: "We could not save this answer. Try again." };
   return { ok: true, message: "Draft saved", savedAt: new Date().toISOString() };
+}
+
+export async function submitApplicationAction(input: z.infer<typeof submissionSchema>): Promise<ApplicantActionResult> {
+  const parsed = submissionSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "This application could not be reviewed for submission." };
+
+  const auth = await getAuthenticatedApplicant();
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Your session has expired. Sign in again." };
+
+  const { data: application } = await auth.supabase.from("applications").select("id, applicant_id, position_id, status").eq("id", parsed.data.applicationId).maybeSingle();
+  if (!application || application.applicant_id !== auth.user.id || application.status !== "draft") {
+    return { ok: false, message: "This application is no longer an editable draft." };
+  }
+
+  const { data: questions } = await auth.supabase.from("position_questions").select("id, kind, is_required").eq("position_id", application.position_id);
+  if (!questions) return { ok: false, message: "Application questions could not be verified." };
+  const submittedAnswers = new Map(parsed.data.answers.map((answer) => [answer.questionId, answer.answer.trim()]));
+
+  for (const question of questions) {
+    const answer = submittedAnswers.get(question.id) ?? "";
+    if (question.is_required && !answer) return { ok: false, message: "Answer every required question before submitting." };
+    if (question.kind === "url" && answer) {
+      try { new URL(answer); } catch { return { ok: false, message: "Check that every portfolio link begins with https://" }; }
+    }
+  }
+
+  const answerRows = questions.map((question) => ({
+    application_id: application.id,
+    question_id: question.id,
+    answer_text: submittedAnswers.get(question.id) || null,
+    answer_json: null,
+  })).filter((answer) => answer.answer_text);
+  if (answerRows.length) {
+    const { error } = await auth.supabase.from("application_answers").upsert(answerRows, { onConflict: "application_id,question_id" });
+    if (error) return { ok: false, message: "Your latest answers could not be saved. Nothing was submitted." };
+  }
+
+  const { data: submitted, error } = await auth.supabase.from("applications").update({ status: "submitted" }).eq("id", application.id).eq("applicant_id", auth.user.id).eq("status", "draft").select("id, submitted_at").single();
+  if (error || !submitted?.submitted_at) return { ok: false, message: error?.message ?? "Submission was not accepted. Check the campaign window and your profile." };
+
+  revalidatePath("/applicant");
+  revalidatePath(`/applicant/applications/${application.id}`);
+  return { ok: true, message: "Application submitted", receipt: `ARENA-${application.id.slice(0, 8).toUpperCase()}`, savedAt: submitted.submitted_at };
+}
+
+export async function withdrawApplicationAction(applicationId: string): Promise<ApplicantActionResult> {
+  const parsedId = z.uuid().safeParse(applicationId);
+  if (!parsedId.success) return { ok: false, message: "This application could not be identified." };
+
+  const auth = await getAuthenticatedApplicant();
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Your session has expired. Sign in again." };
+
+  const { data: application, error } = await auth.supabase.from("applications").update({ status: "withdrawn" }).eq("id", parsedId.data).eq("applicant_id", auth.user.id).in("status", ["submitted", "under_review", "shortlisted", "interview_scheduled", "interviewed", "waitlisted"]).select("id").maybeSingle();
+  if (error || !application) return { ok: false, message: "This application can no longer be withdrawn online." };
+
+  revalidatePath("/applicant");
+  revalidatePath(`/applicant/applications/${application.id}`);
+  return { ok: true, message: "Application withdrawn" };
+}
+
+export async function markNotificationReadAction(notificationId: string): Promise<ApplicantActionResult> {
+  const parsedId = z.uuid().safeParse(notificationId);
+  if (!parsedId.success) return { ok: false, message: "Notification not found." };
+  const auth = await getAuthenticatedApplicant();
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Your session has expired. Sign in again." };
+  const { error } = await auth.supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", parsedId.data).eq("recipient_id", auth.user.id);
+  if (error) return { ok: false, message: "Notification could not be updated." };
+  revalidatePath("/applicant");
+  return { ok: true, message: "Notification read" };
 }

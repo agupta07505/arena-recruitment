@@ -4,6 +4,8 @@ import {
   isEligibleForPosition,
   isValidGender,
   getProfileReadiness,
+  formatApplicationStatus,
+  getStatusStep,
   normalizeScholarId,
 } from "@/lib/recruitment-validation";
 
@@ -63,5 +65,18 @@ describe("getProfileReadiness", () => {
 
   it("requires all three consent checkpoints", () => {
     expect(getProfileReadiness({ ...completeProfile, staffAccessConsent: false })).toMatchObject({ completed: 9, percentage: 90, ready: false });
+  });
+});
+
+describe("application status presentation", () => {
+  it("formats public status labels without exposing internal details", () => {
+    expect(formatApplicationStatus("interview_scheduled")).toBe("Interview Scheduled");
+  });
+
+  it("maps applicant-visible progress to the timeline", () => {
+    expect(getStatusStep("submitted")).toBe(0);
+    expect(getStatusStep("shortlisted")).toBe(2);
+    expect(getStatusStep("selected")).toBe(5);
+    expect(getStatusStep("draft")).toBe(-1);
   });
 });

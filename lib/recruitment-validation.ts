@@ -35,6 +35,39 @@ export const applicationAnswerSchema = z.object({
   answer: z.string().trim().max(8_000),
 });
 
+export const submissionSchema = z.object({
+  applicationId: z.uuid(),
+  answers: z.array(applicationAnswerSchema.omit({ applicationId: true })).max(40),
+});
+
+export const applicantVisibleStatuses = [
+  "draft",
+  "submitted",
+  "under_review",
+  "shortlisted",
+  "interview_scheduled",
+  "interviewed",
+  "selected",
+  "waitlisted",
+  "rejected",
+  "withdrawn",
+] as const;
+
+export function formatApplicationStatus(status: string) {
+  return status.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+export function getStatusStep(status: string) {
+  if (status === "withdrawn" || status === "rejected") return 4;
+  if (status === "selected" || status === "waitlisted") return 5;
+  if (status === "interviewed") return 4;
+  if (status === "interview_scheduled") return 3;
+  if (status === "shortlisted") return 2;
+  if (status === "under_review") return 1;
+  if (status === "submitted") return 0;
+  return -1;
+}
+
 export function normalizeScholarId(value: string) {
   return value.trim().replace(/[\s-]+/g, "").toUpperCase();
 }

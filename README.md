@@ -15,6 +15,7 @@ The recruitment platform for the operational team supporting the Association for
 - Google OAuth and verified email/password authentication entry points
 - Protected applicant workspace with reusable autosaving profiles
 - Eligibility-aware position selection and independent role application drafts
+- Final review, locked submission receipts, public status timelines, withdrawal, and in-app updates
 
 The recruitment campaign is seeded as an unpublished draft until dates and final wording are confirmed.
 
@@ -55,4 +56,4 @@ npm run supabase:types
 
 ## Next milestone
 
-Add final application review and submission receipts, status timelines, withdrawal, and applicant notifications.
+Build reviewer assignment and scoring, followed by the admin application queue and applicant drill-down.

@@ -5,7 +5,7 @@ import { signOutAction } from "@/app/auth/actions";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 import type { ProfileDraft } from "@/lib/recruitment-validation";
-import { ApplicantWorkspace, type WorkspacePosition } from "./applicant-workspace";
+import { ApplicantWorkspace, type WorkspaceNotification, type WorkspacePosition } from "./applicant-workspace";
 import styles from "./applicant.module.css";
 
 export const dynamic = "force-dynamic";
@@ -16,10 +16,11 @@ export default async function ApplicantPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const [{ data: profile }, { data: campaign }, { data: applications }] = await Promise.all([
+  const [{ data: profile }, { data: campaign }, { data: applications }, { data: notificationRows }] = await Promise.all([
     supabase.from("profiles").select("full_name, scholar_id, phone, branch, academic_year, gender, availability, experience, motivation, work_links, recruitment_consent_at, reporting_consent_at, staff_access_consent_at").eq("id", user.id).maybeSingle(),
     supabase.from("campaigns").select("id, name, status, positions(id, slug, title, division, summary, capacity, eligible_years, sort_order)").eq("is_published", true).in("status", ["open", "closed"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("applications").select("id, position_id, status").eq("applicant_id", user.id),
+    supabase.from("notifications").select("id, title, body, payload, created_at, read_at").eq("recipient_id", user.id).order("created_at", { ascending: false }).limit(20),
   ]);
 
   const initialProfile: ProfileDraft = {
@@ -52,6 +53,7 @@ export default async function ApplicantPage() {
       applicationStatus: application?.status ?? null,
     };
   });
+  const notifications: WorkspaceNotification[] = (notificationRows ?? []).map((notification) => ({ id: notification.id, title: notification.title, body: notification.body, createdAt: notification.created_at, readAt: notification.read_at, applicationId: typeof notification.payload?.application_id === "string" ? notification.payload.application_id : null }));
 
   return (
     <main className={styles.shell}>
@@ -61,7 +63,7 @@ export default async function ApplicantPage() {
         <h1>Build your<br /><em>lineup.</em></h1>
         <div><p>Welcome, {initialProfile.fullName.split(" ")[0] || "player"}. Complete one profile, then create independent drafts for every eligible position.</p><small>A.R.E.N.A recruitment console · 01</small></div>
       </section>
-      <ApplicantWorkspace email={user.email ?? ""} initialProfile={initialProfile} positions={positions} campaignName={campaign?.name ?? null} campaignOpen={campaign?.status === "open"} />
+      <ApplicantWorkspace email={user.email ?? ""} initialProfile={initialProfile} positions={positions} campaignName={campaign?.name ?? null} campaignOpen={campaign?.status === "open"} notifications={notifications} />
     </main>
   );
 }

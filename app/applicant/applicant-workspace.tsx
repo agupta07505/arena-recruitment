@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   createDraftApplicationAction,
+  markNotificationReadAction,
   saveProfileAction,
 } from "./actions";
 import {
@@ -11,6 +12,7 @@ import {
   branchOptions,
   getProfileReadiness,
   type ProfileDraft,
+  formatApplicationStatus,
 } from "@/lib/recruitment-validation";
 import styles from "./applicant.module.css";
 
@@ -32,21 +34,25 @@ type ApplicantWorkspaceProps = {
   positions: WorkspacePosition[];
   campaignName: string | null;
   campaignOpen: boolean;
+  notifications: WorkspaceNotification[];
 };
+
+export type WorkspaceNotification = { id: string; title: string; body: string; createdAt: string; readAt: string | null; applicationId: string | null };
 
 function timeLabel(value: Date | null) {
   if (!value) return "Not saved yet";
   return `Saved ${value.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`;
 }
 
-export function ApplicantWorkspace({ email, initialProfile, positions, campaignName, campaignOpen }: ApplicantWorkspaceProps) {
+export function ApplicantWorkspace({ email, initialProfile, positions, campaignName, campaignOpen, notifications: initialNotifications }: ApplicantWorkspaceProps) {
   const router = useRouter();
   const [profile, setProfile] = useState(initialProfile);
-  const [activePanel, setActivePanel] = useState<"profile" | "positions">("profile");
+  const [activePanel, setActivePanel] = useState<"profile" | "positions" | "notifications">("profile");
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [saveMessage, setSaveMessage] = useState("Your changes save automatically");
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [applicationError, setApplicationError] = useState<string | null>(null);
+  const [notifications, setNotifications] = useState(initialNotifications);
   const [isSaving, startSaving] = useTransition();
   const [isOpening, startOpening] = useTransition();
   const initialProfileHash = useRef(JSON.stringify(initialProfile));
@@ -131,6 +137,9 @@ export function ApplicantWorkspace({ email, initialProfile, positions, campaignN
         <button className={activePanel === "positions" ? styles.activeTab : ""} onClick={() => setActivePanel("positions")} type="button">
           <span>02</span> Positions <i>{positions.length}</i>
         </button>
+        <button className={activePanel === "notifications" ? styles.activeTab : ""} onClick={() => setActivePanel("notifications")} type="button">
+          <span>03</span> Updates <i>{notifications.filter((notification) => !notification.readAt).length}</i>
+        </button>
         <div className={`${styles.saveSignal} ${styles[saveState]}`} aria-live="polite">
           <i /> {isSaving ? "Saving…" : saveMessage} <small>{timeLabel(savedAt)}</small>
         </div>
@@ -199,7 +208,7 @@ export function ApplicantWorkspace({ email, initialProfile, positions, campaignN
             </div>
           </form>
         </section>
-      ) : (
+      ) : activePanel === "positions" ? (
         <section className={styles.positionsPanel}>
           <div className={styles.positionsHeading}>
             <div><span className={styles.overline}>Campaign / {campaignOpen ? "live" : "standby"}</span><h2>Choose your<br />arena.</h2></div>
@@ -215,11 +224,16 @@ export function ApplicantWorkspace({ email, initialProfile, positions, campaignN
                   <span className={styles.positionIndex}>{String(index + 1).padStart(2, "0")}</span>
                   <div className={styles.positionCopy}><small>{position.division} / {position.capacity.toString().padStart(2, "0")} opening{position.capacity === 1 ? "" : "s"}</small><h3>{position.title}</h3><p>{position.summary}</p></div>
                   <div className={styles.eligibility}><span>Eligible year</span><b>{position.eligibleYears.map((year) => `${year}${year === 1 ? "st" : year === 2 ? "nd" : "rd"}`).join(" / ")}</b><i className={eligible ? styles.eligible : ""}>{eligible ? "Eligible" : profile.academicYear ? "Not eligible" : "Add your year"}</i></div>
-                  <button disabled={!canOpen || isOpening} onClick={() => openApplication(position.id)} type="button">{position.applicationId ? "Continue draft" : "Start application"}<span>↗</span></button>
+                  <button disabled={!position.applicationId && (!canOpen || isOpening)} onClick={() => position.applicationId ? router.push(`/applicant/applications/${position.applicationId}`) : openApplication(position.id)} type="button">{position.applicationId ? (position.applicationStatus === "draft" ? "Continue draft" : `View ${formatApplicationStatus(position.applicationStatus ?? "")}`) : "Start application"}<span>↗</span></button>
                 </article>
               );
             }) : <div className={styles.standbyCard}><span>Transmission paused</span><h3>Recruitment is not open yet.</h3><p>Your completed profile will stay ready. Confirmed roles and application forms will appear here when the campaign is published.</p></div>}
           </div>
+        </section>
+      ) : (
+        <section className={styles.notificationsPanel}>
+          <div className={styles.positionsHeading}><div><span className={styles.overline}>Applicant signals</span><h2>Status<br />updates.</h2></div><p>Only your public recruitment status appears here.<br /><span>Reviewer scores and private comments remain staff-only.</span></p></div>
+          <div className={styles.notificationList}>{notifications.length ? notifications.map((notification) => <article className={notification.readAt ? styles.readNotification : ""} key={notification.id}><i /><div><span>{new Date(notification.createdAt).toLocaleString()}</span><h3>{notification.title}</h3><p>{notification.body}</p></div><div>{notification.applicationId && <button onClick={() => router.push(`/applicant/applications/${notification.applicationId}`)} type="button">Open application ↗</button>}{!notification.readAt && <button onClick={() => startOpening(async () => { const result = await markNotificationReadAction(notification.id); if (result.ok) setNotifications((current) => current.map((item) => item.id === notification.id ? { ...item, readAt: new Date().toISOString() } : item)); })} type="button">Mark read</button>}</div></article>) : <div className={styles.standbyCard}><span>All quiet</span><h3>No updates yet.</h3><p>Submission receipts and public status changes will appear here.</p></div>}</div>
         </section>
       )}
     </>

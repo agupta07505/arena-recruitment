@@ -12,14 +12,15 @@ export default async function ApplicationPage({ params }: { params: Promise<{ ap
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const { data: application } = await supabase.from("applications").select("id, status, applicant_id, position:positions(id, title, division, summary, eligible_years)").eq("id", applicationId).eq("applicant_id", user.id).maybeSingle();
+  const { data: application } = await supabase.from("applications").select("id, status, submitted_at, withdrawn_at, applicant_id, position:positions(id, title, division, summary, eligible_years)").eq("id", applicationId).eq("applicant_id", user.id).maybeSingle();
   if (!application) notFound();
   const position = Array.isArray(application.position) ? application.position[0] : application.position;
   if (!position) notFound();
 
-  const [{ data: questionRows }, { data: answerRows }] = await Promise.all([
+  const [{ data: questionRows }, { data: answerRows }, { data: bookingRow }] = await Promise.all([
     supabase.from("position_questions").select("id, prompt, help_text, kind, is_required, sort_order").eq("position_id", position.id).order("sort_order"),
     supabase.from("application_answers").select("question_id, answer_text").eq("application_id", application.id),
+    supabase.from("interview_bookings").select("status, slot:interview_slots(starts_at, ends_at, venue, meeting_url)").eq("application_id", application.id).in("status", ["pending", "confirmed"]).maybeSingle(),
   ]);
   const answers = new Map((answerRows ?? []).map((answer) => [answer.question_id, answer.answer_text ?? ""]));
   const questions: ApplicationQuestion[] = (questionRows ?? []).map((question) => ({
@@ -31,5 +32,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ ap
     answer: answers.get(question.id) ?? "",
   }));
 
-  return <ApplicationForm applicationId={application.id} position={{ title: position.title, division: position.division, summary: position.summary, eligibleYears: position.eligible_years }} questions={questions} status={application.status} />;
+  const slot = bookingRow?.slot ? (Array.isArray(bookingRow.slot) ? bookingRow.slot[0] : bookingRow.slot) : null;
+  const booking = bookingRow && slot ? { status: bookingRow.status, startsAt: slot.starts_at, endsAt: slot.ends_at, venue: slot.venue, meetingUrl: slot.meeting_url } : null;
+  return <ApplicationForm applicationId={application.id} position={{ title: position.title, division: position.division, summary: position.summary, eligibleYears: position.eligible_years }} questions={questions} status={application.status} submittedAt={application.submitted_at} withdrawnAt={application.withdrawn_at} booking={booking} />;
 }
