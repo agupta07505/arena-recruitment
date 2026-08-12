@@ -31,8 +31,7 @@ export default function Home() {
         <div className="hero-orbit orbit-one" aria-hidden="true" />
         <div className="hero-orbit orbit-two" aria-hidden="true" />
         <div className="scorebug" aria-label="Recruitment status">
-          <span className="live-dot" /> Recruitment 01
-          <b>Open soon</b>
+          <span className="live-dot" /> Recruitment
         </div>
         <div className="hero-copy">
           <span className="hero-kicker">Association for Recreation, Esports, and Athletics</span>
@@ -126,4 +125,3 @@ export default function Home() {
     </main>
   );
 }
-
