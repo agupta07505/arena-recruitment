@@ -77,13 +77,14 @@ button, a { -webkit-tap-highlight-color: transparent; }
 .intro-topline { position: absolute; top: 44px; left: clamp(24px,4vw,68px); right: clamp(24px,4vw,68px); display: flex; justify-content: space-between; color: #888d83; font-size: 11px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
 .intro-topline span:first-child { display: flex; align-items: center; gap: 9px; }
 .intro-topline i { width: 6px; height: 6px; background: var(--acid); border-radius: 50%; box-shadow: 0 0 12px var(--acid); animation: blink 1s infinite; }
-.intro-lock { position: absolute; width: min(42vw, 470px); aspect-ratio: 1; border: 1px solid rgba(216,255,62,.12); transform: rotate(45deg); animation: lockIn 1.3s cubic-bezier(.2,.8,.2,1) both; }
+.intro-stage { position: relative; z-index: 1; display: grid; width: min(88vw, 1180px); justify-items: center; gap: clamp(18px,2vw,28px); }
+.intro-lock { position: absolute; top: 50%; left: 50%; width: min(42vw, 470px); aspect-ratio: 1; border: 1px solid rgba(216,255,62,.12); animation: lockIn 1.3s cubic-bezier(.2,.8,.2,1) both; }
 .intro-lock i { position: absolute; width: 20px; height: 20px; border-color: var(--acid); opacity: .65; }
 .intro-lock i:nth-child(1){top:-1px;left:-1px;border-top:2px solid;border-left:2px solid}.intro-lock i:nth-child(2){top:-1px;right:-1px;border-top:2px solid;border-right:2px solid}.intro-lock i:nth-child(3){bottom:-1px;left:-1px;border-bottom:2px solid;border-left:2px solid}.intro-lock i:nth-child(4){bottom:-1px;right:-1px;border-bottom:2px solid;border-right:2px solid}
 .intro-word { position: relative; display: flex; color: var(--paper); font-family: "Syne Variable", sans-serif; font-size: clamp(70px,14vw,210px); font-weight: 750; letter-spacing: -.09em; line-height: 1; }
 .intro-word span { display: block; opacity: 0; transform: translateY(70px) rotateX(-80deg); animation: introLetter .7s cubic-bezier(.18,.85,.24,1.15) forwards; }
-.motion-intro > p { position: absolute; top: calc(50% + clamp(65px,8vw,115px)); display: flex; align-items: center; gap: 12px; color: #8f938a; font-size: 11px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; animation: rise .6s .45s both; }
-.motion-intro > p b { display: block; width: 4px; height: 4px; background: var(--sport); border-radius: 50%; }
+.intro-stage > p { position: relative; display: flex; align-items: center; gap: 12px; margin: 0; color: #aeb2a8; font-size: 13px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; animation: rise .6s .45s both; }
+.intro-stage > p b { display: block; width: 5px; height: 5px; background: var(--sport); border-radius: 50%; }
 .intro-loader { position: absolute; bottom: 64px; width: min(390px,70vw); height: 1px; overflow: hidden; background: #242721; }
 .intro-loader i { display: block; width: 100%; height: 100%; transform-origin: left; background: linear-gradient(90deg,var(--sport),var(--acid),var(--esport)); animation: introLoad 1.7s cubic-bezier(.6,0,.3,1) both; }
 .motion-intro button { position: absolute; right: clamp(24px,4vw,68px); bottom: 42px; padding: 8px; color: #94988e; border: 0; background: transparent; font: 800 11px/1 "Manrope Variable",sans-serif; letter-spacing: .12em; text-transform: uppercase; cursor: pointer; transition: color .2s; }
@@ -290,7 +291,7 @@ footer > div:last-child i { width: 3px; height: 3px; background: var(--sport); b
 @keyframes hudSpin { to { transform: rotate(360deg); } }
 @keyframes headerDrop { from { opacity:0; transform:translateY(-100%); } to { opacity:1; transform:translateY(0); } }
 @keyframes introPulse { 50% { transform: scale(1.05); opacity:.65; } }
-@keyframes lockIn { from { opacity:0; transform:rotate(15deg) scale(1.4); } to { opacity:1; transform:rotate(45deg) scale(1); } }
+@keyframes lockIn { from { opacity:0; transform:translate(-50%,-50%) rotate(15deg) scale(1.4); } to { opacity:1; transform:translate(-50%,-50%) rotate(45deg) scale(1); } }
 @keyframes introLetter { to { opacity:1; transform:translateY(0) rotateX(0); } }
 @keyframes introLoad { from { transform:scaleX(0); } to { transform:scaleX(1); } }
 @keyframes drawLine { to { stroke-dashoffset:0; } }
@@ -353,12 +354,13 @@ footer > div:last-child i { width: 3px; height: 3px; background: var(--sport); b
   .motion-intro { padding: 24px 20px; }
   .motion-intro::before { background-size: 25vw 25vw; }
   .motion-intro::after { width: 118vw; opacity: .7; }
-  .intro-topline { top: max(24px,env(safe-area-inset-top)); left: 20px; right: 20px; font-size: 9px; }
+  .intro-topline { top: max(28px,env(safe-area-inset-top)); left: 22px; right: 22px; font-size: 11px; line-height: 1.4; }
   .intro-topline span:last-child { display:none; }
-  .intro-lock { width: min(68vw,280px); }
+  .intro-stage { width: 100%; gap: 20px; transform: translateY(-2vh); }
+  .intro-lock { width: min(72vw,292px); }
   .intro-lock i { width: 15px; height: 15px; }
-  .intro-word { font-size: clamp(54px,20.5vw,82px); letter-spacing: -.105em; transform: translateX(-.04em); }
-  .motion-intro > p { top: calc(50% + 62px); width: calc(100% - 40px); justify-content: center; gap: 7px; font-size: 8px; letter-spacing: .09em; white-space: nowrap; }
+  .intro-word { font-size: clamp(58px,20.5vw,82px); letter-spacing: -.095em; transform: translateX(-.02em); }
+  .intro-stage > p { justify-content: center; gap: 8px; font-size: 11px; letter-spacing: .1em; white-space: nowrap; }
   .intro-loader { bottom: max(78px,calc(env(safe-area-inset-bottom) + 70px)); width: calc(100% - 40px); }
   .motion-intro button { right: 14px; bottom: max(24px,env(safe-area-inset-bottom)); font-size: 10px; }
   footer { grid-template-columns: 1fr; gap: 28px; justify-items: center; text-align: center; }

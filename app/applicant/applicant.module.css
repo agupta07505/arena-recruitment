@@ -18,3 +18,20 @@
 @media(max-width:720px){.shell{padding-left:16px;padding-right:16px}.headerIdentity>span{display:none}.hero{min-height:350px}.hero h1{margin-top:55px}.commandBar{grid-template-columns:auto 1fr}.commandStats{grid-column:1/-1;border-top:1px solid rgba(238,240,233,.1);padding-top:18px}.commandStats span:first-child{border-left:0}.workspaceNav{top:0}.workspaceNav>button{padding:17px 9px}.workspaceNav>button span{display:none}.saveSignal{font-size:0}.saveSignal small{display:none}.profileGuide{padding:36px 25px}.profileGuide ol{grid-template-columns:1fr}.fieldGrid{grid-template-columns:1fr}.wideField{grid-column:auto}.profileForm fieldset{padding-left:20px;padding-right:20px}.positionsHeading{grid-template-columns:1fr}.positionList article{grid-template-columns:34px 1fr;gap:16px}.eligibility{grid-column:2}.positionList article>button{grid-column:2}.applicationHero{grid-template-columns:1fr}.applicationMeter{width:110px}.questionLayout{grid-template-columns:1fr}.questionLayout>aside{position:static}.applicationHeader>div span{display:none}.formFooter,.questionForm footer{align-items:flex-start;gap:20px;flex-direction:column}.formFooter button,.questionForm footer button{width:100%}.timeline{grid-template-columns:repeat(3,1fr);gap:20px 0}.notificationList article>div:last-child{flex-wrap:wrap}.reviewGate{padding:28px 22px}.confirmOverlay section{padding:28px 22px}}
 @media(prefers-reduced-motion:reduce){.saveSignal.saving i{animation:none}.positionList article{transition:none}}
 .interviewResponse{display:flex;gap:9px;margin-top:14px!important;padding-top:14px!important}.interviewResponse button{padding:11px 14px;color:#bfc6bd;border:1px solid #3b433c;background:transparent;font:900 8px/1 "Manrope Variable",sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}.interviewResponse button:last-child{color:#071010;border-color:var(--esport);background:var(--esport)}
+
+/* Applicant-facing copy must remain readable on ordinary laptop and phone screens. */
+.profileGuide>p,.positionCopy p,.standbyCard p,.notificationList article p,.reviewGate p,.confirmOverlay p{font-size:14px;line-height:1.7}
+.profileGuide li,.workspaceNav>button,.consentStack span,.consentStack b,.eligibility b{font-size:12px}
+.fieldGrid label,.wideField,.inputLabel,.positionCopy small,.eligibility span,.standbyCard>span,.questionForm>label>span,.questionLayout>aside>span,.reviewGate>span,.confirmOverlay section>span{font-size:11px;line-height:1.45}
+.fieldGrid small,.wideField small,.formFooter p,.questionForm footer p,.questionForm>label>small,.questionLayout>aside>div small{font-size:11px;line-height:1.55}
+.fieldGrid input,.fieldGrid select,.fieldGrid textarea,.questionForm input,.questionForm textarea{font-size:15px}
+.segmented button,.formFooter button,.questionForm footer button,.positionList article>button,.notificationList button,.withdrawButton,.reviewGate button,.confirmOverlay button{font-size:11px}
+.positionIndex,.eligibility i,.notificationList article span,.receiptBlock span,.interviewCard span,.timeline span{font-size:10px}
+.questionLayout>aside>p,.interviewCard p{font-size:13px;line-height:1.7}
+
+@media(max-width:720px){
+  .profileGuide h2,.positionsHeading h2{font-size:clamp(46px,14vw,62px);line-height:.9}
+  .profileGuide>p,.positionCopy p,.standbyCard p,.notificationList article p{font-size:14px}
+  .fieldGrid label,.wideField,.inputLabel,.positionCopy small,.eligibility span,.questionForm>label>span{font-size:11px}
+  .workspaceNav>button{font-size:11px}
+}

@@ -89,15 +89,17 @@ export function MotionSystem() {
             <span><i /> A.R.E.N.A SIGNAL</span>
             <span>IIIT BHOPAL / 01</span>
           </div>
-          <div className="intro-lock" aria-hidden="true">
-            <i /><i /><i /><i />
+          <div className="intro-stage">
+            <div className="intro-lock" aria-hidden="true">
+              <i /><i /><i /><i />
+            </div>
+            <div className="intro-word" aria-label="A.R.E.N.A">
+              {"ARENA".split("").map((letter, index) => (
+                <span key={letter + index} style={{ animationDelay: `${index * 70}ms` }}>{letter}</span>
+              ))}
+            </div>
+            <p>Sports <b /> Esports <b /> Operations</p>
           </div>
-          <div className="intro-word" aria-label="A.R.E.N.A">
-            {"ARENA".split("").map((letter, index) => (
-              <span key={letter + index} style={{ animationDelay: `${index * 70}ms` }}>{letter}</span>
-            ))}
-          </div>
-          <p>Sports <b /> Esports <b /> Operations</p>
           <div className="intro-loader"><i /></div>
           <button type="button" onClick={dismissIntro}>Skip intro</button>
         </div>
