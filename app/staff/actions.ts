@@ -26,6 +26,24 @@ const reviewSchema = z.object({
   comments: z.string().trim().max(8_000),
 });
 
+const slotSchema = z.object({
+  applicationId: z.uuid(),
+  startsAt: z.iso.datetime(),
+  endsAt: z.iso.datetime(),
+  venue: z.string().trim().max(200),
+  meetingUrl: z.string().trim().max(500),
+  capacity: z.number().int().min(1).max(50),
+  interviewerIds: z.array(z.uuid()).max(12),
+});
+
+const feedbackSchema = z.object({
+  bookingId: z.uuid(),
+  attended: z.boolean(),
+  feedback: z.string().trim().max(8_000),
+  recommendation: z.enum(recommendations).nullable(),
+  finalNotes: z.string().trim().max(8_000),
+});
+
 async function getStaff(required: (typeof staffRoles)[number][]) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
@@ -103,4 +121,60 @@ export async function changeApplicationStatusAction(input: { applicationId: stri
   revalidatePath("/staff");
   revalidatePath(`/staff/applications/${parsed.data.applicationId}`);
   return { ok: true, message: "Application status updated." };
+}
+
+export async function scheduleInterviewAction(input: z.infer<typeof slotSchema>): Promise<StaffActionResult> {
+  const parsed = slotSchema.safeParse(input);
+  if (!parsed.success || (!parsed.data.venue && !parsed.data.meetingUrl) || new Date(parsed.data.startsAt) >= new Date(parsed.data.endsAt)) return { ok: false, message: "Add valid times and either a venue or meeting link." };
+  const auth = await getStaff(["admin"]);
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Administrator access required." };
+  const { data: application } = await auth.supabase.from("applications").select("id, campaign_id, position_id").eq("id", parsed.data.applicationId).maybeSingle();
+  if (!application) return { ok: false, message: "Application not found." };
+  const { data: slot, error: slotError } = await auth.supabase.from("interview_slots").insert({
+    campaign_id: application.campaign_id,
+    position_id: application.position_id,
+    starts_at: parsed.data.startsAt,
+    ends_at: parsed.data.endsAt,
+    venue: parsed.data.venue || null,
+    meeting_url: parsed.data.meetingUrl || null,
+    capacity: parsed.data.capacity,
+    interviewer_ids: parsed.data.interviewerIds,
+    created_by: auth.user.id,
+  }).select("id").single();
+  if (slotError || !slot) return { ok: false, message: "Interview slot could not be created." };
+  const { error: bookingError } = await auth.supabase.from("interview_bookings").insert({ slot_id: slot.id, application_id: application.id, status: "pending" });
+  if (bookingError) {
+    await auth.supabase.from("interview_slots").delete().eq("id", slot.id);
+    return { ok: false, message: bookingError.message };
+  }
+  const { error: statusError } = await auth.supabase.from("applications").update({ status: "interview_scheduled" }).eq("id", application.id);
+  if (statusError) return { ok: false, message: "Slot created, but application status needs manual review." };
+  revalidatePath("/staff"); revalidatePath(`/staff/applications/${application.id}`); revalidatePath(`/applicant/applications/${application.id}`);
+  return { ok: true, message: "Interview assigned and applicant notified." };
+}
+
+export async function updateInterviewBookingAction(input: { bookingId: string; action: "cancel" }): Promise<StaffActionResult> {
+  const parsed = z.object({ bookingId: z.uuid(), action: z.literal("cancel") }).safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Booking not found." };
+  const auth = await getStaff(["admin"]);
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Administrator access required." };
+  const { data: booking, error } = await auth.supabase.from("interview_bookings").update({ status: "cancelled" }).eq("id", parsed.data.bookingId).select("application_id").maybeSingle();
+  if (error || !booking) return { ok: false, message: "Interview could not be cancelled." };
+  revalidatePath("/staff"); revalidatePath(`/staff/applications/${booking.application_id}`); revalidatePath(`/applicant/applications/${booking.application_id}`);
+  return { ok: true, message: "Interview cancelled and applicant notified." };
+}
+
+export async function submitInterviewFeedbackAction(input: z.infer<typeof feedbackSchema>): Promise<StaffActionResult> {
+  const parsed = feedbackSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Interview feedback is invalid." };
+  const auth = await getStaff(["interviewer", "admin"]);
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Interviewer access required." };
+  const { data: booking } = await auth.supabase.from("interview_bookings").select("id, application_id, slot:interview_slots(interviewer_ids)").eq("id", parsed.data.bookingId).maybeSingle();
+  const slot = booking?.slot ? (Array.isArray(booking.slot) ? booking.slot[0] : booking.slot) : null;
+  if (!booking || !slot?.interviewer_ids.includes(auth.user.id)) return { ok: false, message: "This interview is not assigned to your account." };
+  const { error } = await auth.supabase.from("interview_feedback").upsert({ booking_id: booking.id, interviewer_id: auth.user.id, attended: parsed.data.attended, feedback: parsed.data.feedback || null, recommendation: parsed.data.recommendation, final_notes: parsed.data.finalNotes || null }, { onConflict: "booking_id,interviewer_id" });
+  if (error) return { ok: false, message: "Feedback could not be saved." };
+  if (parsed.data.attended) await auth.supabase.from("applications").update({ status: "interviewed" }).eq("id", booking.application_id).eq("status", "interview_scheduled");
+  revalidatePath("/staff"); revalidatePath(`/staff/applications/${booking.application_id}`);
+  return { ok: true, message: "Interview feedback recorded." };
 }

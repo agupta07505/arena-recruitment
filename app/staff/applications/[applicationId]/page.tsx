@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { formatApplicationStatus } from "@/lib/recruitment-validation";
 import { createClient } from "@/lib/supabase/server";
-import { AssignmentControl, DecisionControl, ReviewRubric } from "./review-console";
+import { AssignmentControl, DecisionControl, InterviewBookingControl, InterviewScheduler, ReviewRubric } from "./review-console";
 import styles from "../../staff.module.css";
 
 export const dynamic = "force-dynamic";
@@ -22,19 +22,29 @@ export default async function StaffApplicationPage({ params }: { params: Promise
   const position = Array.isArray(application.position) ? application.position[0] : application.position;
   if (!applicant || !position) notFound();
 
-  const [{ data: answerRows }, { data: assignmentRows }, { data: reviewRows }, { data: reviewerRoleRows }] = await Promise.all([
+  const [{ data: answerRows }, { data: assignmentRows }, { data: reviewRows }, { data: reviewerRoleRows }, { data: interviewerRoleRows }, { data: bookingRow }] = await Promise.all([
     supabase.from("application_answers").select("answer_text, question:position_questions(prompt, sort_order)").eq("application_id", application.id),
     supabase.from("review_assignments").select("id, reviewer_id, assigned_at, due_at, completed_at").eq("application_id", application.id),
     supabase.from("reviews").select("assignment_id, reviewer_id, motivation_score, experience_score, role_fit_score, communication_score, availability_score, recommendation, private_comments, submitted_at"),
     supabase.from("staff_roles").select("user_id").eq("role", "reviewer"),
+    supabase.from("staff_roles").select("user_id").eq("role", "interviewer"),
+    supabase.from("interview_bookings").select("id, status, slot:interview_slots(starts_at, ends_at, venue, meeting_url, interviewer_ids)").eq("application_id", application.id).in("status", ["pending", "confirmed", "declined", "cancelled"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
   ]);
   const reviewerIds = (reviewerRoleRows ?? []).map((row) => row.user_id);
-  const { data: reviewerProfiles } = reviewerIds.length ? await supabase.from("profiles").select("id, full_name, email").in("id", reviewerIds) : { data: [] };
+  const interviewerIds = (interviewerRoleRows ?? []).map((row) => row.user_id);
+  const staffProfileIds = Array.from(new Set([...reviewerIds, ...interviewerIds]));
+  const { data: staffProfiles } = staffProfileIds.length ? await supabase.from("profiles").select("id, full_name, email").in("id", staffProfileIds) : { data: [] };
+  const reviewerProfiles = (staffProfiles ?? []).filter((profile) => reviewerIds.includes(profile.id));
+  const interviewerProfiles = (staffProfiles ?? []).filter((profile) => interviewerIds.includes(profile.id));
   const reviewerById = new Map((reviewerProfiles ?? []).map((profile) => [profile.id, profile]));
   const reviewByAssignment = new Map((reviewRows ?? []).map((review) => [review.assignment_id, review]));
   const ownAssignmentRow = (assignmentRows ?? []).find((assignment) => assignment.reviewer_id === user.id);
   const ownReview = ownAssignmentRow ? reviewByAssignment.get(ownAssignmentRow.id) : null;
   const ownAssignment = ownAssignmentRow ? { id: ownAssignmentRow.id, review: ownReview ? { motivation: ownReview.motivation_score, experience: ownReview.experience_score, roleFit: ownReview.role_fit_score, communication: ownReview.communication_score, availability: ownReview.availability_score, recommendation: ownReview.recommendation, comments: ownReview.private_comments ?? "" } : null } : null;
+  const bookingSlot = bookingRow?.slot ? (Array.isArray(bookingRow.slot) ? bookingRow.slot[0] : bookingRow.slot) : null;
+  const canFeedback = Boolean(bookingSlot?.interviewer_ids.includes(user.id));
+  const { data: feedbackRow } = bookingRow && canFeedback ? await supabase.from("interview_feedback").select("attended, feedback, recommendation, final_notes").eq("booking_id", bookingRow.id).eq("interviewer_id", user.id).maybeSingle() : { data: null };
+  const booking = bookingRow && bookingSlot ? { id: bookingRow.id, status: bookingRow.status, startsAt: bookingSlot.starts_at, endsAt: bookingSlot.ends_at, venue: bookingSlot.venue, meetingUrl: bookingSlot.meeting_url, feedback: feedbackRow ? { attended: feedbackRow.attended, feedback: feedbackRow.feedback ?? "", recommendation: feedbackRow.recommendation, finalNotes: feedbackRow.final_notes ?? "" } : null } : null;
 
   return <main className={styles.recordShell}>
     <header><Link href="/staff">← Application queue</Link><div><span>{position.division}</span><strong>{formatApplicationStatus(application.status)}</strong></div></header>
@@ -47,7 +57,9 @@ export default async function StaffApplicationPage({ params }: { params: Promise
         {roles.includes("admin") && <section><div className={styles.panelTitle}><span>A</span><h2>Assign reviewers</h2></div><AssignmentControl applicationId={application.id} reviewers={(reviewerProfiles ?? []).map((profile) => ({ id: profile.id, name: profile.full_name ?? "", email: profile.email }))} /></section>}
         <section><div className={styles.panelTitle}><span>B</span><h2>Your rubric</h2></div><ReviewRubric assignment={ownAssignment} /></section>
         <section><div className={styles.panelTitle}><span>C</span><h2>Panel progress</h2></div><div className={styles.panelReviews}>{(assignmentRows ?? []).map((assignment) => { const reviewer = reviewerById.get(assignment.reviewer_id); const review = reviewByAssignment.get(assignment.id); return <article key={assignment.id}><div><strong>{reviewer?.full_name ?? reviewer?.email ?? "Reviewer"}</strong><small>{assignment.completed_at ? "Completed" : "Pending"}</small></div><span>{review ? `${((review.motivation_score + review.experience_score + review.role_fit_score + review.communication_score + review.availability_score) / 5).toFixed(1)}` : "—"}</span></article>; })}</div></section>
-        {roles.includes("admin") && <section><div className={styles.panelTitle}><span>D</span><h2>Decision control</h2></div><DecisionControl applicationId={application.id} currentStatus={application.status} /></section>}
+        {roles.includes("admin") && !booking && <section><div className={styles.panelTitle}><span>D</span><h2>Schedule interview</h2></div><InterviewScheduler applicationId={application.id} interviewers={interviewerProfiles.map((profile) => ({ id: profile.id, name: profile.full_name ?? "", email: profile.email }))} /></section>}
+        {(booking || roles.includes("interviewer")) && <section><div className={styles.panelTitle}><span>E</span><h2>Interview desk</h2></div><InterviewBookingControl booking={booking} canAdmin={roles.includes("admin")} canFeedback={canFeedback} /></section>}
+        {roles.includes("admin") && <section><div className={styles.panelTitle}><span>F</span><h2>Decision control</h2></div><DecisionControl applicationId={application.id} currentStatus={application.status} /></section>}
       </aside>
     </div>
   </main>;

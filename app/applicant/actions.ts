@@ -224,3 +224,15 @@ export async function markNotificationReadAction(notificationId: string): Promis
   revalidatePath("/applicant");
   return { ok: true, message: "Notification read" };
 }
+
+export async function respondToInterviewAction(input: { bookingId: string; response: "confirmed" | "declined" }): Promise<ApplicantActionResult> {
+  const parsed = z.object({ bookingId: z.uuid(), response: z.enum(["confirmed", "declined"]) }).safeParse(input);
+  if (!parsed.success) return { ok: false, message: "That interview response is not valid." };
+  const auth = await getAuthenticatedApplicant();
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Your session has expired." };
+  const { data: booking, error } = await auth.supabase.from("interview_bookings").update({ status: parsed.data.response }).eq("id", parsed.data.bookingId).eq("status", "pending").select("application_id").maybeSingle();
+  if (error || !booking) return { ok: false, message: "This interview invitation can no longer be changed." };
+  revalidatePath("/applicant");
+  revalidatePath(`/applicant/applications/${booking.application_id}`);
+  return { ok: true, message: parsed.data.response === "confirmed" ? "Interview confirmed" : "Interview declined" };
+}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { assignReviewerAction, changeApplicationStatusAction, submitReviewAction } from "../../actions";
+import { assignReviewerAction, changeApplicationStatusAction, scheduleInterviewAction, submitInterviewFeedbackAction, submitReviewAction, updateInterviewBookingAction } from "../../actions";
 import styles from "../../staff.module.css";
 
 type Reviewer = { id: string; name: string; email: string };
@@ -40,4 +40,26 @@ export function DecisionControl({ applicationId, currentStatus }: { applicationI
     <button disabled={isPending} type="submit">{isPending ? "Recording…" : "Record decision"}</button>
     {message && <p>{message}</p>}
   </form>;
+}
+
+type Interviewer = { id: string; name: string; email: string };
+export function InterviewScheduler({ applicationId, interviewers }: { applicationId: string; interviewers: Interviewer[] }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  return <form className={styles.interviewForm} onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); const startsAt = new Date(String(data.get("startsAt"))); const endsAt = new Date(String(data.get("endsAt"))); startTransition(async () => setMessage((await scheduleInterviewAction({ applicationId, startsAt: startsAt.toISOString(), endsAt: endsAt.toISOString(), venue: String(data.get("venue") ?? ""), meetingUrl: String(data.get("meetingUrl") ?? ""), capacity: Number(data.get("capacity")), interviewerIds: data.getAll("interviewers").map(String) })).message)); }}>
+    <div><label><span>Starts</span><input name="startsAt" required type="datetime-local" /></label><label><span>Ends</span><input name="endsAt" required type="datetime-local" /></label></div>
+    <label><span>Venue</span><input name="venue" placeholder="Room / ground / lab" /></label><label><span>Meeting link</span><input name="meetingUrl" placeholder="https://meet.google.com/…" type="url" /></label>
+    <label><span>Capacity</span><input defaultValue="1" min="1" name="capacity" type="number" /></label>
+    <fieldset><legend>Interviewers</legend>{interviewers.map((person) => <label key={person.id}><input name="interviewers" type="checkbox" value={person.id} /><span>{person.name || person.email}</span></label>)}</fieldset>
+    <button disabled={isPending || !interviewers.length} type="submit">{isPending ? "Scheduling…" : interviewers.length ? "Assign interview" : "Add interviewers first"}</button>{message && <p>{message}</p>}
+  </form>;
+}
+
+export function InterviewBookingControl({ booking, canAdmin, canFeedback }: { booking: { id: string; status: string; startsAt: string; endsAt: string; venue: string | null; meetingUrl: string | null; feedback: { attended: boolean; feedback: string; recommendation: string | null; finalNotes: string } | null } | null; canAdmin: boolean; canFeedback: boolean }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  if (!booking) return <div className={styles.noAssignment}><span>Interview desk</span><strong>No interview assigned.</strong></div>;
+  return <div className={styles.bookingControl}><article><span>{booking.status}</span><strong>{new Date(booking.startsAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</strong><p>{booking.venue ?? booking.meetingUrl}</p>{canAdmin && !["cancelled", "declined"].includes(booking.status) && <button disabled={isPending} onClick={() => startTransition(async () => setMessage((await updateInterviewBookingAction({ bookingId: booking.id, action: "cancel" })).message))} type="button">Cancel interview</button>}</article>
+    {canFeedback && <form className={styles.feedbackForm} onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); startTransition(async () => setMessage((await submitInterviewFeedbackAction({ bookingId: booking.id, attended: data.get("attended") === "true", feedback: String(data.get("feedback") ?? ""), recommendation: data.get("recommendation") ? String(data.get("recommendation")) as "strong_yes" | "yes" | "maybe" | "no" | "strong_no" : null, finalNotes: String(data.get("finalNotes") ?? "") })).message)); }}><label><span>Attendance</span><select defaultValue={booking.feedback?.attended === false ? "false" : "true"} name="attended"><option value="true">Attended</option><option value="false">Absent</option></select></label><label><span>Feedback</span><textarea defaultValue={booking.feedback?.feedback ?? ""} name="feedback" rows={4} /></label><label><span>Recommendation</span><select defaultValue={booking.feedback?.recommendation ?? ""} name="recommendation"><option value="">No recommendation</option><option value="strong_yes">Strong yes</option><option value="yes">Yes</option><option value="maybe">Maybe</option><option value="no">No</option><option value="strong_no">Strong no</option></select></label><label><span>Final notes</span><textarea defaultValue={booking.feedback?.finalNotes ?? ""} name="finalNotes" rows={3} /></label><button disabled={isPending} type="submit">Record feedback</button></form>}{message && <p>{message}</p>}
+  </div>;
 }

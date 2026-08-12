@@ -20,7 +20,7 @@ export default async function ApplicationPage({ params }: { params: Promise<{ ap
   const [{ data: questionRows }, { data: answerRows }, { data: bookingRow }] = await Promise.all([
     supabase.from("position_questions").select("id, prompt, help_text, kind, is_required, sort_order").eq("position_id", position.id).order("sort_order"),
     supabase.from("application_answers").select("question_id, answer_text").eq("application_id", application.id),
-    supabase.from("interview_bookings").select("status, slot:interview_slots(starts_at, ends_at, venue, meeting_url)").eq("application_id", application.id).in("status", ["pending", "confirmed"]).maybeSingle(),
+    supabase.from("interview_bookings").select("id, status, slot:interview_slots(starts_at, ends_at, venue, meeting_url)").eq("application_id", application.id).in("status", ["pending", "confirmed"]).maybeSingle(),
   ]);
   const answers = new Map((answerRows ?? []).map((answer) => [answer.question_id, answer.answer_text ?? ""]));
   const questions: ApplicationQuestion[] = (questionRows ?? []).map((question) => ({
@@ -33,6 +33,6 @@ export default async function ApplicationPage({ params }: { params: Promise<{ ap
   }));
 
   const slot = bookingRow?.slot ? (Array.isArray(bookingRow.slot) ? bookingRow.slot[0] : bookingRow.slot) : null;
-  const booking = bookingRow && slot ? { status: bookingRow.status, startsAt: slot.starts_at, endsAt: slot.ends_at, venue: slot.venue, meetingUrl: slot.meeting_url } : null;
+  const booking = bookingRow && slot ? { id: bookingRow.id, status: bookingRow.status, startsAt: slot.starts_at, endsAt: slot.ends_at, venue: slot.venue, meetingUrl: slot.meeting_url } : null;
   return <ApplicationForm applicationId={application.id} position={{ title: position.title, division: position.division, summary: position.summary, eligibleYears: position.eligible_years }} questions={questions} status={application.status} submittedAt={application.submitted_at} withdrawnAt={application.withdrawn_at} booking={booking} />;
 }

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatApplicationStatus, getStatusStep } from "@/lib/recruitment-validation";
-import { saveApplicationAnswerAction, submitApplicationAction, withdrawApplicationAction } from "../../actions";
+import { respondToInterviewAction, saveApplicationAnswerAction, submitApplicationAction, withdrawApplicationAction } from "../../actions";
 import styles from "../../applicant.module.css";
 
 export type ApplicationQuestion = { id: string; prompt: string; helpText: string | null; kind: "short_text" | "long_text" | "url" | "boolean" | "single_choice"; required: boolean; answer: string };
@@ -15,7 +15,7 @@ type ApplicationFormProps = {
   questions: ApplicationQuestion[];
   submittedAt: string | null;
   withdrawnAt: string | null;
-  booking: { status: string; startsAt: string; endsAt: string; venue: string | null; meetingUrl: string | null } | null;
+  booking: { id: string; status: string; startsAt: string; endsAt: string; venue: string | null; meetingUrl: string | null } | null;
 };
 
 const timeline = ["Submitted", "Under review", "Shortlisted", "Interview", "Decision", "Complete"];
@@ -68,6 +68,14 @@ export function ApplicationForm({ applicationId, booking, position, questions, s
     });
   }
 
+  function respondToInterview(response: "confirmed" | "declined") {
+    if (!booking) return;
+    startTransition(async () => {
+      const result = await respondToInterviewAction({ bookingId: booking.id, response });
+      if (result.ok) { setError(null); router.refresh(); } else setError(result.message);
+    });
+  }
+
   const currentStep = getStatusStep(status);
   return (
     <main className={styles.applicationShell}>
@@ -77,7 +85,7 @@ export function ApplicationForm({ applicationId, booking, position, questions, s
       {!editable && <section className={styles.statusConsole}>
         <div className={styles.receiptBlock}><span>Submission receipt</span><strong>{receipt}</strong><small>{status === "withdrawn" && withdrawnAt ? `Withdrawn ${new Date(withdrawnAt).toLocaleString()}` : submittedAt ? `Submitted ${new Date(submittedAt).toLocaleString()}` : "Recorded securely"}</small></div>
         <div className={styles.timeline}>{timeline.map((label, index) => <div className={index <= currentStep ? styles.reached : ""} key={label}><i>{index < currentStep ? "✓" : String(index + 1).padStart(2, "0")}</i><span>{label}</span></div>)}</div>
-        {booking && <div className={styles.interviewCard}><span>Interview / {booking.status}</span><strong>{new Date(booking.startsAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</strong><p>{booking.venue ?? booking.meetingUrl ?? "Details will be shared soon"}</p></div>}
+        {booking && <div className={styles.interviewCard}><span>Interview / {booking.status}</span><strong>{new Date(booking.startsAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}</strong><p>{booking.venue ?? booking.meetingUrl ?? "Details will be shared soon"}</p>{booking.status === "pending" && <div className={styles.interviewResponse}><button disabled={isPending} onClick={() => respondToInterview("declined")} type="button">Decline</button><button disabled={isPending} onClick={() => respondToInterview("confirmed")} type="button">Confirm interview</button></div>}</div>}
       </section>}
 
       <section className={styles.questionLayout}>
