@@ -8,10 +8,10 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get("code");
   const tokenHash = requestUrl.searchParams.get("token_hash");
   const emailType = requestUrl.searchParams.get("type") as EmailOtpType | null;
-  const requestedNext = requestUrl.searchParams.get("next") ?? "/applicant";
+  const requestedNext = requestUrl.searchParams.get("next") ?? "/staff";
   const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//")
     ? requestedNext
-    : "/applicant";
+    : "/staff";
 
   if (!isSupabaseConfigured()) {
     return NextResponse.redirect(new URL("/auth/sign-in?error=Supabase%20is%20not%20configured", requestUrl));

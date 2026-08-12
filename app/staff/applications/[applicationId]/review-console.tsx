@@ -1,11 +1,33 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { assignReviewerAction, changeApplicationStatusAction, scheduleInterviewAction, submitInterviewFeedbackAction, submitReviewAction, updateInterviewBookingAction } from "../../actions";
+import { assignReviewerAction, changeApplicationStatusAction, scheduleInterviewAction, submitInterviewFeedbackAction, submitReviewAction, updateApplicantDetailsAction, updateInterviewBookingAction } from "../../actions";
 import styles from "../../staff.module.css";
+import editorStyles from "./editor.module.css";
 
 type Reviewer = { id: string; name: string; email: string };
 type OwnAssignment = { id: string; review: { motivation: number; experience: number; roleFit: number; communication: number; availability: number; recommendation: string; comments: string } | null } | null;
+
+export type EditableApplicant = { fullName: string; scholarId: string; degree: string; branch: string; year: string; gender: string; phone: string; email: string; experience: string; workLinks: string[] };
+
+export function ApplicantDetailsEditor({ applicationId, applicant }: { applicationId: string; applicant: EditableApplicant }) {
+  const [message, setMessage] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+  return <form className={editorStyles.form} onSubmit={(event) => { event.preventDefault(); const data = new FormData(event.currentTarget); const links = String(data.get("workLinks") ?? "").split(/\r?\n|,/).map((item) => item.trim()).filter(Boolean); startTransition(async () => setMessage((await updateApplicantDetailsAction({ applicationId, fullName: String(data.get("fullName")), scholarId: String(data.get("scholarId")), degree: String(data.get("degree")) as "B.Tech" | "MCA" | "M.Tech" | "Ph.D", branch: String(data.get("branch")), year: String(data.get("year")), gender: String(data.get("gender")) as "Male" | "Female" | "Third gender", phone: String(data.get("phone")), email: String(data.get("email")), experience: String(data.get("experience")), workLinks: links })).message)); }}>
+    <label><span>Name</span><input defaultValue={applicant.fullName} name="fullName" required /></label>
+    <label><span>Scholar No.</span><input defaultValue={applicant.scholarId} name="scholarId" required /></label>
+    <label><span>Degree</span><select defaultValue={applicant.degree} name="degree">{["B.Tech","MCA","M.Tech","Ph.D"].map((value) => <option key={value}>{value}</option>)}</select></label>
+    <label><span>Branch</span><input defaultValue={applicant.branch} name="branch" required /></label>
+    <label><span>Year</span><input defaultValue={applicant.year} name="year" required /></label>
+    <label><span>Gender</span><select defaultValue={applicant.gender} name="gender">{["Male","Female","Third gender"].map((value) => <option key={value}>{value}</option>)}</select></label>
+    <label><span>Contact no.</span><input defaultValue={applicant.phone} name="phone" required /></label>
+    <label><span>Email</span><input defaultValue={applicant.email} name="email" required type="email" /></label>
+    <label className={editorStyles.wide}><span>Relevant experience</span><textarea defaultValue={applicant.experience} name="experience" required rows={5} /></label>
+    <label className={editorStyles.wide}><span>Public work links / one per line</span><textarea defaultValue={applicant.workLinks.join("\n")} name="workLinks" rows={4} /></label>
+    <button disabled={isPending} type="submit">{isPending ? "Saving…" : "Save applicant details"}</button>
+    {message && <p>{message}</p>}
+  </form>;
+}
 
 export function AssignmentControl({ applicationId, reviewers }: { applicationId: string; reviewers: Reviewer[] }) {
   const [message, setMessage] = useState<string | null>(null);

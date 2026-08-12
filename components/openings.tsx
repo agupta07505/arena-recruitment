@@ -2,11 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { ArrowUpRight } from "@/components/icons";
-import {
-  formatEligibleYears,
-  positions,
-  type Division,
-} from "@/lib/recruitment";
+import { positions, type Division } from "@/lib/recruitment";
 
 const filters: Array<{ label: string; value: Division | "all" }> = [
   { label: "All roles", value: "all" },
@@ -31,8 +27,8 @@ export function Openings() {
           <h2>Find your place<br />behind the play.</h2>
         </div>
         <p>
-          Eight roles. Sixteen seats. One operational team supporting A.R.E.N.A&apos;s
-          existing student leadership across every field and server.
+          Choose the work that fits you best. Every role contributes directly to
+          stronger sports, esports, events, media, and technology at IIIT Bhopal.
         </p>
       </div>
 
@@ -54,7 +50,7 @@ export function Openings() {
           <article className={`role-card role-${position.division}`} key={position.slug}>
             <div className="role-topline">
               <span>{String(index + 1).padStart(2, "0")}</span>
-              <span>{position.capacity} {position.capacity === 1 ? "seat" : "seats"}</span>
+              <span>{position.division}</span>
             </div>
             <div>
               <span className="role-signal">{position.signal}</span>
@@ -62,8 +58,8 @@ export function Openings() {
               <p>{position.summary}</p>
             </div>
             <div className="role-footer">
-              <span>Year {formatEligibleYears(position.eligibleYears)}</span>
-              <a href="#apply" aria-label={`Explore ${position.title}`}>
+              <span>Open for applications</span>
+              <a href={`/apply?position=${position.slug}`} aria-label={`Apply for ${position.title}`}>
                 <ArrowUpRight />
               </a>
             </div>

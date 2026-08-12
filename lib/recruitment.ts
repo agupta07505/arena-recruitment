@@ -1,6 +1,5 @@
 export type Division = "operations" | "esports" | "creative" | "technology";
-export type EligibleYear = 1 | 2 | 3;
-
+export type EligibleYear = 1 | 2 | 3 | 4;
 export type Position = {
   slug: string;
   title: string;
@@ -84,13 +83,15 @@ export const positions: Position[] = [
     summary: "Build dependable registration, scoring, streaming, and web systems.",
     signal: "Power the system",
   },
+  {
+    slug: "volunteer-coordinator",
+    title: "Volunteer Coordinator",
+    capacity: 1,
+    eligibleYears: [1, 2, 3, 4],
+    division: "operations",
+    summary: "Bring volunteers together, communicate clearly, and keep every crew supported and on time.",
+    signal: "Mobilise the crew",
+  },
 ];
 
-export const totalOpenings = positions.reduce(
-  (total, position) => total + position.capacity,
-  0,
-);
-
-export function formatEligibleYears(years: EligibleYear[]) {
-  return years.map((year) => `${year}${year === 1 ? "st" : year === 2 ? "nd" : "rd"}`).join(" / ");
-}
+export const totalOpenings = positions.reduce((total, position) => total + position.capacity, 0);

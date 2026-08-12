@@ -8,6 +8,19 @@ export type StaffActionResult = { ok: boolean; message: string };
 
 const staffRoles = ["admin", "reviewer", "interviewer", "observer"] as const;
 const recommendations = ["strong_yes", "yes", "maybe", "no", "strong_no"] as const;
+const applicantDetailsSchema = z.object({
+  applicationId: z.uuid(),
+  fullName: z.string().trim().min(2).max(120),
+  scholarId: z.string().trim().min(4).max(24),
+  degree: z.enum(["B.Tech", "MCA", "M.Tech", "Ph.D"]),
+  branch: z.string().trim().min(1).max(100),
+  year: z.string().trim().min(1).max(40),
+  gender: z.enum(["Male", "Female", "Third gender"]),
+  phone: z.string().trim().min(7).max(24),
+  email: z.email().max(254),
+  experience: z.string().trim().min(1).max(8_000),
+  workLinks: z.array(z.url().max(500)).max(12),
+});
 
 const assignmentSchema = z.object({
   applicationId: z.uuid(),
@@ -121,6 +134,29 @@ export async function changeApplicationStatusAction(input: { applicationId: stri
   revalidatePath("/staff");
   revalidatePath(`/staff/applications/${parsed.data.applicationId}`);
   return { ok: true, message: "Application status updated." };
+}
+
+export async function updateApplicantDetailsAction(input: z.infer<typeof applicantDetailsSchema>): Promise<StaffActionResult> {
+  const parsed = applicantDetailsSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, message: "Check every applicant field and public link." };
+  const auth = await getStaff(["admin"]);
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Administrator access required." };
+  const { error } = await auth.supabase.from("applications").update({
+    applicant_name: parsed.data.fullName,
+    applicant_scholar_id: parsed.data.scholarId.toUpperCase().replace(/[\s-]+/g, ""),
+    applicant_degree: parsed.data.degree,
+    applicant_branch: parsed.data.branch,
+    applicant_year: parsed.data.year,
+    applicant_gender: parsed.data.gender,
+    applicant_phone: parsed.data.phone,
+    applicant_email: parsed.data.email.toLowerCase(),
+    relevant_experience: parsed.data.experience,
+    work_links: parsed.data.workLinks,
+  }).eq("id", parsed.data.applicationId);
+  if (error) return { ok: false, message: error.code === "23505" ? "That email already applied for this position." : error.message };
+  revalidatePath("/staff");
+  revalidatePath(`/staff/applications/${parsed.data.applicationId}`);
+  return { ok: true, message: "Applicant details updated." };
 }
 
 export async function scheduleInterviewAction(input: z.infer<typeof slotSchema>): Promise<StaffActionResult> {

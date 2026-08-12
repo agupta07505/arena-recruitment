@@ -24,7 +24,8 @@ values
   ('20000000-0000-4000-8000-000000000005', '10000000-0000-4000-8000-000000000001', 'photographer', 'Photographer', 'creative', 'Find the decisive moments on fields, courts, stages, and screens.', 1, array[2]::smallint[], 50),
   ('20000000-0000-4000-8000-000000000006', '10000000-0000-4000-8000-000000000001', 'video-editor', 'Video Editor', 'creative', 'Cut raw energy into recaps, promos, and stories people remember.', 2, array[1,2]::smallint[], 60),
   ('20000000-0000-4000-8000-000000000007', '10000000-0000-4000-8000-000000000001', 'social-media-pr', 'Social Media & PR', 'creative', 'Give every fixture, player, and milestone a clear public voice.', 1, array[2]::smallint[], 70),
-  ('20000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'tech-coordinator', 'Tech Coordinator', 'technology', 'Build dependable registration, scoring, streaming, and web systems.', 2, array[2]::smallint[], 80)
+  ('20000000-0000-4000-8000-000000000008', '10000000-0000-4000-8000-000000000001', 'tech-coordinator', 'Tech Coordinator', 'technology', 'Build dependable registration, scoring, streaming, and web systems.', 2, array[2]::smallint[], 80),
+  ('20000000-0000-4000-8000-000000000009', '10000000-0000-4000-8000-000000000001', 'volunteer-coordinator', 'Volunteer Coordinator', 'operations', 'Bring volunteers together, communicate clearly, and keep every crew supported and on time.', 1, array[1,2,3,4]::smallint[], 90)
 on conflict (id) do update set
   title = excluded.title,
   division = excluded.division,

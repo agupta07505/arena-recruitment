@@ -3,18 +3,6 @@ import { EsportHudVisual, SportMotionVisual } from "@/components/arena-visuals";
 import { ArrowDown, ArrowUpRight } from "@/components/icons";
 import { MotionSystem } from "@/components/motion-system";
 import { Openings } from "@/components/openings";
-import { positions, totalOpenings } from "@/lib/recruitment";
-
-const leaders = [
-  ["Faculty Coordinator", "Dr Akhilendra Pratap Singh"],
-  ["Female Faculty Coordinator", "Dr Pallavi Athe"],
-  ["Sports Secretary", "Priyanshu Sharma"],
-  ["General Secretary", "Gatavya Mittal"],
-  ["Treasurer & Sponsorship Head", "Shubh Shivhare"],
-  ["Technical & Media Head", "Samraddha Niranjan"],
-  ["Sports Head", "Ansh Gupta"],
-  ["Esports Head", "Harsh Prajapat"],
-];
 
 const events = [
   "Sporlumina",
@@ -34,9 +22,8 @@ export default function Home() {
         <nav aria-label="Main navigation">
           <a href="#manifesto">Manifesto</a>
           <a href="#openings">Openings</a>
-          <a href="#leadership">Leadership</a>
         </nav>
-        <a className="nav-cta" href="#apply">Enter recruitment <ArrowUpRight /></a>
+        <a className="nav-cta" href="/apply">Apply now <ArrowUpRight /></a>
       </header>
 
       <section className="hero" id="top">
@@ -69,9 +56,9 @@ export default function Home() {
       </section>
 
       <section className="stat-rail" aria-label="Confirmed recruitment configuration">
-        <div data-reveal><strong>{String(positions.length).padStart(2, "0")}</strong><small>recruitment roles</small></div>
-        <div data-reveal><strong>{totalOpenings}</strong><small>confirmed openings</small></div>
-        <div data-reveal><strong>01</strong><small>shared applicant profile</small></div>
+        <div data-reveal><strong>NO</strong><small>account required</small></div>
+        <div data-reveal><strong>01</strong><small>simple application form</small></div>
+        <div data-reveal><strong>DIRECT</strong><small>updates by email or phone</small></div>
       </section>
 
       <section className="manifesto section" id="manifesto">
@@ -117,38 +104,18 @@ export default function Home() {
 
       <Openings />
 
-      <section className="leadership section" id="leadership">
-        <div className="leadership-intro" data-reveal="left">
-          <span className="eyebrow"><b>03</b> Command structure</span>
-          <h2>Built to support.<br />Ready to lead.</h2>
-          <p>
-            The recruited team expands the club&apos;s ability to execute. It works
-            beneath—and alongside—A.R.E.N.A&apos;s established leadership.
-          </p>
-        </div>
-        <div className="leader-list">
-          {leaders.map(([role, name], index) => (
-            <div className="leader-row" data-reveal key={name}>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <small>{role}</small>
-              <strong>{name}</strong>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className="apply-section" data-reveal id="apply">
         <div className="apply-beam" aria-hidden="true" />
         <span className="eyebrow">Your call time is now</span>
         <h2>Step into<br />the <em>A.R.E.N.A.</em></h2>
         <p>
-          Applications are being prepared. Explore the roles now and return when
-          the recruitment desk goes live.
+          Choose a position, share your details, and submit. No account, profile,
+          password, or separate applicant portal.
         </p>
-        <a className="apply-cta" href="/auth/sign-up" aria-describedby="application-status">
-          Create applicant account <ArrowUpRight />
+        <a className="apply-cta" href="/apply" aria-describedby="application-status">
+          Open application form <ArrowUpRight />
         </a>
-        <small id="application-status">Account access is ready. Campaign dates will be announced by club leadership.</small>
+        <small id="application-status">One form. Submit once. We will contact you with updates.</small>
       </section>
 
       <footer>
@@ -159,5 +126,4 @@ export default function Home() {
     </main>
   );
 }
-
 

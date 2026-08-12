@@ -4,10 +4,11 @@ import { describe, expect, it } from "vitest";
 import { positions, totalOpenings } from "@/lib/recruitment";
 
 describe("recruitment configuration", () => {
-  it("contains eight unique roles and sixteen confirmed openings", () => {
-    expect(positions).toHaveLength(8);
-    expect(new Set(positions.map((position) => position.slug)).size).toBe(8);
-    expect(totalOpenings).toBe(16);
+  it("contains nine unique roles including Volunteer Coordinator", () => {
+    expect(positions).toHaveLength(9);
+    expect(new Set(positions.map((position) => position.slug)).size).toBe(9);
+    expect(positions.some((position) => position.slug === "volunteer-coordinator")).toBe(true);
+    expect(totalOpenings).toBe(17);
   });
 
   it("keeps the TypeScript and database seeds aligned", () => {

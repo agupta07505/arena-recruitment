@@ -2,55 +2,16 @@ import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { ArrowUpRight } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import {
-  signInAction,
-  signInWithGoogleAction,
-  signUpAction,
-} from "@/app/auth/actions";
+import { signInAction, signInWithGoogleAction } from "@/app/auth/actions";
 import styles from "./auth.module.css";
-import { TurnstileWidget } from "@/components/turnstile-widget";
-
-type AuthMode = "sign-in" | "sign-up";
 
 type AuthScreenProps = {
-  mode: AuthMode;
   error: string | null;
   message: string | null;
 };
 
-const content = {
-  "sign-in": {
-    index: "01",
-    eyebrow: "Returning applicant",
-    title: <>Welcome<br /><em>back.</em></>,
-    intro: "Return to your applicant workspace, continue your profile, and track every role from one secure account.",
-    panelTitle: "Sign in",
-    panelCopy: "Use the account connected to your recruitment profile.",
-    google: "Sign in with Google",
-    submit: "Enter applicant portal",
-    switchCopy: "New to A.R.E.N.A recruitment?",
-    switchLabel: "Create an account",
-    switchHref: "/auth/sign-up",
-  },
-  "sign-up": {
-    index: "02",
-    eyebrow: "New applicant",
-    title: <>Build your<br /><em>profile.</em></>,
-    intro: "Create one reusable student profile, then submit independent applications for every position you are eligible for.",
-    panelTitle: "Create account",
-    panelCopy: "Start with Google or any verified email address.",
-    google: "Sign up with Google",
-    submit: "Create applicant account",
-    switchCopy: "Already have an account?",
-    switchLabel: "Sign in instead",
-    switchHref: "/auth/sign-in",
-  },
-} satisfies Record<AuthMode, Record<string, React.ReactNode>>;
-
-export function AuthScreen({ mode, error, message }: AuthScreenProps) {
+export function AuthScreen({ error, message }: AuthScreenProps) {
   const configured = isSupabaseConfigured();
-  const copy = content[mode];
-  const isSignUp = mode === "sign-up";
 
   return (
     <main className={styles.shell}>
@@ -61,23 +22,17 @@ export function AuthScreen({ mode, error, message }: AuthScreenProps) {
       </header>
 
       <section className={styles.context}>
-        <span className={styles.eyebrow}><i /> {copy.eyebrow} / {copy.index}</span>
-        <h1>{copy.title}</h1>
-        <p>{copy.intro}</p>
+        <span className={styles.eyebrow}><i /> Authorized staff / 01</span>
+        <h1>Staff<br /><em>access.</em></h1>
+        <p>This sign-in is reserved for authorized A.R.E.N.A recruitment staff. Applicants do not need an account.</p>
       </section>
 
       <section className={styles.authPanel} aria-labelledby="auth-title">
         <div className={styles.panelHeader}>
-          <span>Applicant terminal</span><b>Secure</b>
+          <span>Staff terminal</span><b>Secure</b>
         </div>
-
-        <nav className={styles.modeNav} aria-label="Authentication options">
-          <Link aria-current={!isSignUp ? "page" : undefined} href="/auth/sign-in">Sign in</Link>
-          <Link aria-current={isSignUp ? "page" : undefined} href="/auth/sign-up">Sign up</Link>
-        </nav>
-
-        <h2 id="auth-title">{copy.panelTitle}</h2>
-        <p>{copy.panelCopy}</p>
+        <h2 id="auth-title">Sign in</h2>
+        <p>Use the account granted access to the recruitment database.</p>
 
         {!configured && (
           <div className={styles.notice} role="status">
@@ -88,37 +43,25 @@ export function AuthScreen({ mode, error, message }: AuthScreenProps) {
         {message && <div className={styles.success} role="status">{message}</div>}
 
         <form action={signInWithGoogleAction}>
-          <input name="authMode" type="hidden" value={mode} />
           <button className={styles.googleButton} disabled={!configured} type="submit">
-            <span>G</span> {copy.google}
+            <span>G</span> Sign in with Google
           </button>
         </form>
 
         <div className={styles.divider}><span>or verified email</span></div>
 
-        <form action={isSignUp ? signUpAction : signInAction} className={styles.form}>
-          {isSignUp && (
-            <label>
-              <span>Full name</span>
-              <input autoComplete="name" disabled={!configured} name="fullName" placeholder="Your full name" required type="text" />
-            </label>
-          )}
+        <form action={signInAction} className={styles.form}>
           <label>
             <span>Email address</span>
             <input autoComplete="email" disabled={!configured} name="email" placeholder="you@example.com" required type="email" />
           </label>
           <label>
             <span>Password</span>
-            <input autoComplete={isSignUp ? "new-password" : "current-password"} disabled={!configured} minLength={8} name="password" placeholder="Minimum 8 characters" required type="password" />
+            <input autoComplete="current-password" disabled={!configured} minLength={8} name="password" placeholder="Your password" required type="password" />
           </label>
-          {isSignUp && <TurnstileWidget siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />}
-          <button className={styles.submitButton} disabled={!configured} type="submit">{copy.submit}</button>
+          <button className={styles.submitButton} disabled={!configured} type="submit">Enter staff console</button>
         </form>
-
-        {isSignUp && (
-          <small className={styles.consent}>Account creation does not submit an application. Recruitment consent is collected separately in your profile.</small>
-        )}
-        <p className={styles.modeSwitch}>{copy.switchCopy} <Link href={String(copy.switchHref)}>{copy.switchLabel}</Link></p>
+        <p className={styles.modeSwitch}>Applying to A.R.E.N.A? <Link href="/apply">Open the application form</Link></p>
       </section>
     </main>
   );
