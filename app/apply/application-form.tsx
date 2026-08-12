@@ -1,24 +1,54 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { TurnstileWidget } from "@/components/turnstile-widget";
-import { initialApplicationResult, submitPublicApplication } from "./actions";
 import styles from "./apply.module.css";
 
 export type PublicPosition = { id: string; slug: string; title: string; division: string };
+type ApplicationResult = { ok: boolean; message: string; receipt?: string };
 
 const degrees = ["B.Tech", "MCA", "M.Tech", "Ph.D"];
 const btechBranches = ["CSE Core", "CSE AI", "CSE DS", "CSE CS", "CSE CPS", "IT", "MNC", "ECE", "PNC"];
 
 export function ApplicationForm({ positions, initialPosition }: { positions: PublicPosition[]; initialPosition: string }) {
-  const [state, formAction, pending] = useActionState(submitPublicApplication, initialApplicationResult);
+  const [result, setResult] = useState<ApplicationResult>({ ok: false, message: "" });
+  const [pending, setPending] = useState(false);
   const [degree, setDegree] = useState("B.Tech");
   const [turnstileToken, setTurnstileToken] = useState("");
 
-  if (state.ok) {
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPending(true);
+    setResult({ ok: false, message: "" });
+    const form = new FormData(event.currentTarget);
+    const payload = Object.fromEntries(form.entries());
+    try {
+      const response = await fetch("/api/applications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const next = await response.json() as ApplicationResult;
+      setResult(next);
+      if (!next.ok) resetTurnstile();
+    } catch {
+      setResult({ ok: false, message: "The connection was interrupted. Your application was not submitted; please try again." });
+      resetTurnstile();
+    } finally {
+      setPending(false);
+    }
+  }
+
+  function resetTurnstile() {
+    const target = window as typeof window & { turnstile?: { reset: () => void } };
+    target.turnstile?.reset();
+    setTurnstileToken("");
+  }
+
+  if (result.ok) {
     return <section className={styles.success} aria-live="polite">
-      <span>Submission received / {state.receipt}</span>
+      <span>Submission received / {result.receipt}</span>
       <div className={styles.successMark}>✓</div>
       <h2>You&apos;re on the list.</h2>
       <p>We will contact you later with recruitment updates. Please keep checking the email address and contact number you submitted.</p>
@@ -26,7 +56,7 @@ export function ApplicationForm({ positions, initialPosition }: { positions: Pub
     </section>;
   }
 
-  return <form action={formAction} className={styles.form}>
+  return <form className={styles.form} onSubmit={submit}>
     <div className={styles.formIntro}>
       <span>Application form / all fields marked * are required</span>
       <h2>Tell us about yourself.</h2>
@@ -74,7 +104,7 @@ export function ApplicationForm({ positions, initialPosition }: { positions: Pub
     <input name="turnstileToken" type="hidden" value={turnstileToken} />
     <div className={styles.submitArea}>
       <TurnstileWidget onToken={setTurnstileToken} siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
-      {state.message && <p className={styles.error} role="alert">{state.message}</p>}
+      {result.message && <p className={styles.error} role="alert">{result.message}</p>}
       <button disabled={pending} type="submit">{pending ? "Submitting…" : "Submit application"}<span>↗</span></button>
       <small>After submitting, A.R.E.N.A will contact you later through your email or phone number.</small>
     </div>

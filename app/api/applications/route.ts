@@ -1,17 +1,7 @@
-"use server";
-
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeScholarId } from "@/lib/recruitment-validation";
 import { isTurnstileConfigured, verifyTurnstile } from "@/lib/turnstile";
-
-export type PublicApplicationResult = {
-  ok: boolean;
-  message: string;
-  receipt?: string;
-};
-
-export const initialApplicationResult: PublicApplicationResult = { ok: false, message: "" };
 
 const degrees = ["B.Tech", "MCA", "M.Tech", "Ph.D"] as const;
 const genders = ["Male", "Female", "Third gender"] as const;
@@ -47,47 +37,30 @@ function parsePublicLinks(value: string) {
   return parsed.success ? parsed.data : null;
 }
 
-export async function submitPublicApplication(
-  _previous: PublicApplicationResult,
-  formData: FormData,
-): Promise<PublicApplicationResult> {
-  const parsed = applicationSchema.safeParse({
-    positionId: formData.get("positionId"),
-    fullName: formData.get("fullName"),
-    scholarId: formData.get("scholarId"),
-    degree: formData.get("degree"),
-    branch: formData.get("branch"),
-    year: formData.get("year"),
-    gender: formData.get("gender"),
-    phone: formData.get("phone"),
-    email: formData.get("email"),
-    experience: formData.get("experience"),
-    links: formData.get("links"),
-    turnstileToken: formData.get("turnstileToken") || undefined,
-    website: formData.get("website") || undefined,
-  });
-
-  if (!parsed.success) return { ok: false, message: "Please complete every required field with valid information." };
-  if (parsed.data.website) return { ok: false, message: "Your application could not be submitted." };
-  const workLinks = parsePublicLinks(parsed.data.links);
-  if (workLinks === null) return { ok: false, message: "Add valid public URLs only, one per line." };
-  if (isTurnstileConfigured() && !(await verifyTurnstile(parsed.data.turnstileToken ?? null))) {
-    return { ok: false, message: "Please complete the security check and submit again." };
-  }
-
+export async function POST(request: Request) {
+  const errorId = crypto.randomUUID().slice(0, 8).toUpperCase();
   try {
+    const parsed = applicationSchema.safeParse(await request.json());
+    if (!parsed.success) return Response.json({ ok: false, message: "Please complete every required field with valid information." }, { status: 400 });
+    if (parsed.data.website) return Response.json({ ok: false, message: "Your application could not be submitted." }, { status: 400 });
+    const workLinks = parsePublicLinks(parsed.data.links);
+    if (workLinks === null) return Response.json({ ok: false, message: "Add valid public URLs only, one per line." }, { status: 400 });
+
+    if (isTurnstileConfigured() && !(await verifyTurnstile(parsed.data.turnstileToken ?? null))) {
+      return Response.json({ ok: false, message: "Please complete the security check again, then resubmit." }, { status: 400 });
+    }
+
     const admin = createAdminClient();
-    const { data: position } = await admin
+    const { data: position, error: positionError } = await admin
       .from("positions")
       .select("id, campaign_id, is_active, campaign:campaigns(status, is_published, opens_at, closes_at)")
       .eq("id", parsed.data.positionId)
       .maybeSingle();
-    const campaign = position?.campaign
-      ? (Array.isArray(position.campaign) ? position.campaign[0] : position.campaign)
-      : null;
+    if (positionError) throw positionError;
+    const campaign = position?.campaign ? (Array.isArray(position.campaign) ? position.campaign[0] : position.campaign) : null;
     const now = Date.now();
     if (!position?.is_active || !campaign?.is_published || campaign.status !== "open" || !campaign.opens_at || !campaign.closes_at || now < new Date(campaign.opens_at).getTime() || now > new Date(campaign.closes_at).getTime()) {
-      return { ok: false, message: "Applications are not open right now." };
+      return Response.json({ ok: false, message: "Applications are not open right now." }, { status: 400 });
     }
 
     const { data: application, error } = await admin.from("applications").insert({
@@ -107,10 +80,11 @@ export async function submitPublicApplication(
       work_links: workLinks,
     }).select("id").single();
 
-    if (error?.code === "23505") return { ok: false, message: "This email has already submitted an application for the selected position." };
-    if (error || !application) return { ok: false, message: "We could not save your application. Please try again." };
-    return { ok: true, message: "Application submitted", receipt: application.id.slice(0, 8).toUpperCase() };
-  } catch {
-    return { ok: false, message: "The application service is being updated. Please try again shortly." };
+    if (error?.code === "23505") return Response.json({ ok: false, message: "This email has already submitted an application for the selected position." }, { status: 409 });
+    if (error || !application) throw error ?? new Error("Application insert returned no record");
+    return Response.json({ ok: true, message: "Application submitted", receipt: application.id.slice(0, 8).toUpperCase() });
+  } catch (error) {
+    console.error(`[application:${errorId}]`, error);
+    return Response.json({ ok: false, message: `We could not save your application. Please try again. Reference: ${errorId}` }, { status: 500 });
   }
 }
