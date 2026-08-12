@@ -16,11 +16,12 @@ export default async function ApplicantPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/sign-in");
 
-  const [{ data: profile }, { data: campaign }, { data: applications }, { data: notificationRows }] = await Promise.all([
+  const [{ data: profile }, { data: campaign }, { data: applications }, { data: notificationRows }, { data: staffRoles }] = await Promise.all([
     supabase.from("profiles").select("full_name, scholar_id, phone, branch, academic_year, gender, availability, experience, motivation, work_links, recruitment_consent_at, reporting_consent_at, staff_access_consent_at").eq("id", user.id).maybeSingle(),
     supabase.from("campaigns").select("id, name, status, positions(id, slug, title, division, summary, capacity, eligible_years, sort_order)").eq("is_published", true).in("status", ["open", "closed"]).order("created_at", { ascending: false }).limit(1).maybeSingle(),
     supabase.from("applications").select("id, position_id, status").eq("applicant_id", user.id),
     supabase.from("notifications").select("id, title, body, payload, created_at, read_at").eq("recipient_id", user.id).order("created_at", { ascending: false }).limit(20),
+    supabase.from("staff_roles").select("role").eq("user_id", user.id),
   ]);
 
   const initialProfile: ProfileDraft = {
@@ -57,7 +58,7 @@ export default async function ApplicantPage() {
 
   return (
     <main className={styles.shell}>
-      <header><Link href="/"><BrandMark /></Link><div className={styles.headerIdentity}><span>{user.email}</span><form action={signOutAction}><button type="submit">Sign out</button></form></div></header>
+      <header><Link href="/"><BrandMark /></Link><div className={styles.headerIdentity}>{staffRoles?.length ? <Link href="/staff">Staff console</Link> : null}<span>{user.email}</span><form action={signOutAction}><button type="submit">Sign out</button></form></div></header>
       <section className={styles.hero}>
         <span>Applicant workspace / secure session</span>
         <h1>Build your<br /><em>lineup.</em></h1>

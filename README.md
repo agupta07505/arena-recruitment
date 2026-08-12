@@ -16,6 +16,7 @@ The recruitment platform for the operational team supporting the Association for
 - Protected applicant workspace with reusable autosaving profiles
 - Eligibility-aware position selection and independent role application drafts
 - Final review, locked submission receipts, public status timelines, withdrawal, and in-app updates
+- Role-protected staff console with searchable application queue, reviewer access, assignments, rubrics, and decision controls
 
 The recruitment campaign is seeded as an unpublished draft until dates and final wording are confirmed.
 
@@ -56,4 +57,4 @@ npm run supabase:types
 
 ## Next milestone
 
-Build reviewer assignment and scoring, followed by the admin application queue and applicant drill-down.
+Build interview slot scheduling, applicant confirmations, interviewer feedback, and recruitment analytics/export.
