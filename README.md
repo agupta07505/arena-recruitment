@@ -18,6 +18,7 @@ The recruitment platform for the operational team supporting the Association for
 - Final review, locked submission receipts, public status timelines, withdrawal, and in-app updates
 - Role-protected staff console with searchable application queue, reviewer access, assignments, rubrics, and decision controls
 - Capacity-safe interview scheduling, applicant responses, interviewer attendance and feedback, and change notifications
+- Internal analytics, protected formula-safe CSV exports, campaign launch interlocks, audit visibility, Turnstile hooks, and queued Brevo delivery
 
 The recruitment campaign is seeded as an unpublished draft until dates and final wording are confirmed.
 
@@ -56,6 +57,6 @@ npm run supabase:types
 
 `supabase:reset` recreates the local database from the versioned migrations and development seed. Never run a linked reset against production.
 
-## Next milestone
+## Operations
 
-Build recruitment analytics, filtered CSV export, campaign controls, and operational backup documentation.
+See `docs/OPERATIONS.md` for launch, backup, recovery, email failure, and campaign-close procedures. The seeded campaign remains unpublished until the launch interlocks are green and an administrator explicitly publishes it.

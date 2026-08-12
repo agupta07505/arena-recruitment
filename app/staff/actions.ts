@@ -178,3 +178,19 @@ export async function submitInterviewFeedbackAction(input: z.infer<typeof feedba
   revalidatePath("/staff"); revalidatePath(`/staff/applications/${booking.application_id}`);
   return { ok: true, message: "Interview feedback recorded." };
 }
+
+export async function updateCampaignAction(input: { campaignId: string; opensAt: string; closesAt: string; action: "save" | "publish" | "close" }): Promise<StaffActionResult> {
+  const parsed = z.object({ campaignId: z.uuid(), opensAt: z.iso.datetime(), closesAt: z.iso.datetime(), action: z.enum(["save", "publish", "close"]) }).safeParse(input);
+  if (!parsed.success || new Date(parsed.data.opensAt) >= new Date(parsed.data.closesAt)) return { ok: false, message: "Set a valid opening and closing window." };
+  const auth = await getStaff(["admin"]);
+  if ("error" in auth) return { ok: false, message: auth.error ?? "Administrator access required." };
+  if (parsed.data.action === "publish") {
+    const missing = [!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || !process.env.TURNSTILE_SECRET_KEY ? "Turnstile" : null, !process.env.BREVO_API_KEY || !process.env.SUPABASE_SERVICE_ROLE_KEY || !process.env.CRON_SECRET ? "transactional email" : null].filter(Boolean);
+    if (missing.length) return { ok: false, message: `Launch blocked: configure ${missing.join(" and ")} first.` };
+  }
+  const update = parsed.data.action === "publish" ? { opens_at: parsed.data.opensAt, closes_at: parsed.data.closesAt, status: "open", is_published: true } : parsed.data.action === "close" ? { opens_at: parsed.data.opensAt, closes_at: parsed.data.closesAt, status: "closed", is_published: true } : { opens_at: parsed.data.opensAt, closes_at: parsed.data.closesAt };
+  const { error } = await auth.supabase.from("campaigns").update(update).eq("id", parsed.data.campaignId);
+  if (error) return { ok: false, message: error.message };
+  revalidatePath("/"); revalidatePath("/applicant"); revalidatePath("/staff");
+  return { ok: true, message: parsed.data.action === "publish" ? "Campaign published." : parsed.data.action === "close" ? "Campaign closed." : "Campaign window saved as draft." };
+}

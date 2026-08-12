@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { formatApplicationStatus, getStatusStep } from "@/lib/recruitment-validation";
 import { respondToInterviewAction, saveApplicationAnswerAction, submitApplicationAction, withdrawApplicationAction } from "../../actions";
 import styles from "../../applicant.module.css";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 
 export type ApplicationQuestion = { id: string; prompt: string; helpText: string | null; kind: "short_text" | "long_text" | "url" | "boolean" | "single_choice"; required: boolean; answer: string };
 type ApplicationFormProps = {
@@ -36,6 +37,7 @@ export function ApplicationForm({ applicationId, booking, position, questions, s
   const [receipt, setReceipt] = useState<string | null>(initialStatus !== "draft" ? `ARENA-${applicationId.slice(0, 8).toUpperCase()}` : null);
   const [status, setStatus] = useState(initialStatus);
   const [confirmation, setConfirmation] = useState<"submit" | "withdraw" | null>(null);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const timers = useRef<Record<string, number>>({});
   const editable = status === "draft";
@@ -55,7 +57,7 @@ export function ApplicationForm({ applicationId, booking, position, questions, s
   function submitApplication() {
     setConfirmation(null); startTransition(async () => {
       setSaveStatus("Submitting securely…");
-      const result = await submitApplicationAction({ applicationId, answers: questions.map((question) => ({ questionId: question.id, answer: answers[question.id] ?? "" })) });
+      const result = await submitApplicationAction({ applicationId, answers: questions.map((question) => ({ questionId: question.id, answer: answers[question.id] ?? "" })), turnstileToken });
       if (result.ok) { setStatus("submitted"); setReceipt(result.receipt ?? null); setReviewing(false); setSaveStatus("Application locked"); setError(null); router.refresh(); }
       else { setSaveStatus("Submission stopped"); setError(result.message); }
     });
@@ -94,7 +96,7 @@ export function ApplicationForm({ applicationId, booking, position, questions, s
           {questions.map((question, index) => <label key={question.id} htmlFor={question.id}><span><b>{String(index + 1).padStart(2, "0")}</b>{question.required ? "Required" : "Optional"}</span><strong>{question.prompt}</strong>{question.helpText && <small>{question.helpText}</small>}<AnswerField disabled={!editable} question={question} value={answers[question.id] ?? ""} onChange={(value) => { setAnswers((current) => ({ ...current, [question.id]: value })); saveAnswer(question, value); }} onBlur={() => saveAnswer(question, answers[question.id] ?? "")} /></label>)}
           {error && <p className={styles.applicationError} role="alert">{error}</p>}
           {editable && !reviewing && <footer><div><span>{completion.percentage === 100 ? "Draft complete" : "Keep building"}</span><p>{completion.percentage === 100 ? "Review every answer before locking your application." : "Complete every required answer to unlock final review."}</p></div><button disabled={completion.percentage < 100 || isPending} onClick={() => setReviewing(true)} type="button">Review & submit</button></footer>}
-          {editable && reviewing && <section className={styles.reviewGate}><span>Final checkpoint</span><h2>Ready to enter<br />the lineup?</h2><p>After submission, you cannot edit this application unless an administrator reopens it. Your other role applications remain independent.</p><div><button onClick={() => setReviewing(false)} type="button">Keep editing</button><button onClick={() => setConfirmation("submit")} type="button">Submit application</button></div></section>}
+          {editable && reviewing && <section className={styles.reviewGate}><span>Final checkpoint</span><h2>Ready to enter<br />the lineup?</h2><p>After submission, you cannot edit this application unless an administrator reopens it. Your other role applications remain independent.</p><TurnstileWidget onToken={setTurnstileToken} siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} /><div><button onClick={() => setReviewing(false)} type="button">Keep editing</button><button onClick={() => setConfirmation("submit")} type="button">Submit application</button></div></section>}
         </form>
       </section>
 

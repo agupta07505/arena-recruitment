@@ -11,6 +11,7 @@ import {
   type ProfileDraft,
 } from "@/lib/recruitment-validation";
 import { createClient } from "@/lib/supabase/server";
+import { isTurnstileConfigured, verifyTurnstile } from "@/lib/turnstile";
 
 export type ApplicantActionResult = {
   ok: boolean;
@@ -159,6 +160,7 @@ export async function saveApplicationAnswerAction(input: z.infer<typeof applicat
 export async function submitApplicationAction(input: z.infer<typeof submissionSchema>): Promise<ApplicantActionResult> {
   const parsed = submissionSchema.safeParse(input);
   if (!parsed.success) return { ok: false, message: "This application could not be reviewed for submission." };
+  if (isTurnstileConfigured() && !await verifyTurnstile(parsed.data.turnstileToken ?? null)) return { ok: false, message: "Complete the anti-bot check before submitting." };
 
   const auth = await getAuthenticatedApplicant();
   if ("error" in auth) return { ok: false, message: auth.error ?? "Your session has expired. Sign in again." };

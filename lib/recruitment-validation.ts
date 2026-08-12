@@ -38,6 +38,7 @@ export const applicationAnswerSchema = z.object({
 export const submissionSchema = z.object({
   applicationId: z.uuid(),
   answers: z.array(applicationAnswerSchema.omit({ applicationId: true })).max(40),
+  turnstileToken: z.string().max(2_048).nullable().optional(),
 });
 
 export const applicantVisibleStatuses = [

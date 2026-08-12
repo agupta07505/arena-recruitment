@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getSiteUrl, isSupabaseConfigured } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
+import { isTurnstileConfigured, verifyTurnstile } from "@/lib/turnstile";
 
 const credentialsSchema = z.object({
   email: z.email("Enter a valid email address."),
@@ -44,6 +45,7 @@ export async function signUpAction(formData: FormData) {
     password: formData.get("password"),
   });
   if (!parsed.success) authRedirect("/auth/sign-up", "error", parsed.error.issues[0]?.message ?? "Invalid signup details.");
+  if (isTurnstileConfigured() && !await verifyTurnstile(String(formData.get("cf-turnstile-response") ?? ""))) authRedirect("/auth/sign-up", "error", "Complete the anti-bot check and try again.");
 
   const supabase = await createClient();
   const { error } = await supabase.auth.signUp({

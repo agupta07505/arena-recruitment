@@ -8,6 +8,7 @@ import {
   signUpAction,
 } from "@/app/auth/actions";
 import styles from "./auth.module.css";
+import { TurnstileWidget } from "@/components/turnstile-widget";
 
 type AuthMode = "sign-in" | "sign-up";
 
@@ -110,6 +111,7 @@ export function AuthScreen({ mode, error, message }: AuthScreenProps) {
             <span>Password</span>
             <input autoComplete={isSignUp ? "new-password" : "current-password"} disabled={!configured} minLength={8} name="password" placeholder="Minimum 8 characters" required type="password" />
           </label>
+          {isSignUp && <TurnstileWidget siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />}
           <button className={styles.submitButton} disabled={!configured} type="submit">{copy.submit}</button>
         </form>
 
