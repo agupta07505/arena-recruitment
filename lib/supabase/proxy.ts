@@ -8,6 +8,7 @@ export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
   const { publishableKey, url } = getSupabasePublicConfig();
   const supabase = createServerClient(url, publishableKey, {
+    cookieOptions: { maxAge: 60 * 60 * 24 * 30, sameSite: "lax", secure: process.env.NODE_ENV === "production" },
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(cookiesToSet) {

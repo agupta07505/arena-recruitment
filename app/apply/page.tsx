@@ -20,7 +20,6 @@ export default async function ApplyPage({ searchParams }: { searchParams: Promis
     <header><Link href="/"><BrandMark /></Link><Link href="/">Back to website ↗</Link></header>
     <section className={styles.hero}>
       <div><span>A.R.E.N.A recruitment / simple entry</span><h1>One form.<br /><em>Your move.</em></h1></div>
-      <p>Select one position and share the details below. No sign-up, password, or account is required.</p>
     </section>
     {isOpen && positions.length ? <ApplicationForm initialPosition={selected} positions={positions} /> : <section className={styles.closed}><span>Recruitment desk</span><h2>Applications are currently closed.</h2><p>Please check A.R.E.N.A&apos;s official channels for the next update.</p><Link href="/">Return home</Link></section>}
   </main>;

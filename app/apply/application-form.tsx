@@ -60,7 +60,6 @@ export function ApplicationForm({ positions, initialPosition }: { positions: Pub
     <div className={styles.formIntro}>
       <span>Application form / all fields marked * are required</span>
       <h2>Tell us about yourself.</h2>
-      <p>Complete this once and submit directly. There is no account creation or applicant portal.</p>
     </div>
 
     <section className={styles.formSection}>

@@ -37,6 +37,17 @@ function parsePublicLinks(value: string) {
   return parsed.success ? parsed.data : null;
 }
 
+export async function GET() {
+  try {
+    const admin = createAdminClient();
+    const { count, error } = await admin.from("positions").select("id", { count: "exact", head: true });
+    if (error) return Response.json({ ok: false, stage: "database", code: error.code }, { status: 503 });
+    return Response.json({ ok: true, positions: count ?? 0 }, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return Response.json({ ok: false, stage: "configuration" }, { status: 503 });
+  }
+}
+
 export async function POST(request: Request) {
   const errorId = crypto.randomUUID().slice(0, 8).toUpperCase();
   try {
