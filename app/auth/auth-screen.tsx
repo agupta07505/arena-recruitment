@@ -2,7 +2,7 @@ import Link from "next/link";
 import { BrandMark } from "@/components/brand-mark";
 import { ArrowUpRight } from "@/components/icons";
 import { isSupabaseConfigured } from "@/lib/supabase/config";
-import { requestPasswordResetAction, signInAction } from "@/app/auth/actions";
+import { signInAction } from "@/app/auth/actions";
 import styles from "./auth.module.css";
 
 type AuthScreenProps = {
@@ -52,10 +52,6 @@ export function AuthScreen({ error, message }: AuthScreenProps) {
             <input autoComplete="current-password" disabled={!configured} minLength={8} name="password" placeholder="Your password" required type="password" />
           </label>
           <button className={styles.submitButton} disabled={!configured} type="submit">Enter staff console</button>
-        </form>
-        <form action={requestPasswordResetAction} className={styles.resetForm}>
-          <label><span>Forgot your password?</span><input autoComplete="email" disabled={!configured} name="email" placeholder="Staff email address" required type="email" /></label>
-          <button disabled={!configured} type="submit">Send password reset link</button>
         </form>
         <p className={styles.modeSwitch}>Applying to A.R.E.N.A? <Link href="/apply">Open the application form</Link></p>
       </section>
