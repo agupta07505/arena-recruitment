@@ -10,8 +10,8 @@ export default async function ApplyPage({ searchParams }: { searchParams: Promis
   const { position: requestedSlug } = await searchParams;
   const supabase = await createClient();
   const { data: campaign } = await supabase.from("campaigns").select("id, name, status, opens_at, closes_at").eq("is_published", true).order("created_at", { ascending: false }).limit(1).maybeSingle();
-  const { data: rows } = campaign ? await supabase.from("positions").select("id, slug, title, division, sort_order").eq("campaign_id", campaign.id).eq("is_active", true).order("sort_order") : { data: [] };
-  const positions: PublicPosition[] = (rows ?? []).map((item) => ({ id: item.id, slug: item.slug, title: item.title, division: item.division }));
+  const { data: rows } = campaign ? await supabase.from("positions").select("id, slug, title, division, eligible_years, sort_order").eq("campaign_id", campaign.id).eq("is_active", true).order("sort_order") : { data: [] };
+  const positions: PublicPosition[] = (rows ?? []).map((item) => ({ id: item.id, slug: item.slug, title: item.title, division: item.division, eligibleYears: item.eligible_years }));
   const selected = positions.find((item) => item.slug === requestedSlug)?.id ?? "";
   const isOpen = Boolean(campaign?.status === "open" && campaign.opens_at && campaign.closes_at);
 
