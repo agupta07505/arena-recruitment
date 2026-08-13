@@ -327,7 +327,7 @@ footer > div:last-child i { width: 3px; height: 3px; background: var(--sport); b
   .motion-ready .hero-copy { transform: none; opacity: 1; }
   .hero-kicker { max-width: 265px; margin-bottom: 20px; font-size: 10px; line-height: 1.55; }
   .hero h1 { width: 100%; font-size: clamp(42px,12.8vw,58px); line-height: .9; letter-spacing: -.068em; }
-  .hero h1 > span { white-space: nowrap; }
+  .hero h1 > span { max-width: 100%; white-space: normal; overflow-wrap: normal; text-wrap: balance; }
   .hero-bottom { justify-content: space-between; gap: 18px; margin-top: 28px; }
   .hero-bottom p { width: min(78%,330px); font-size: 13px; line-height: 1.55; }
   .circle-link { width: 52px; height: 52px; }
