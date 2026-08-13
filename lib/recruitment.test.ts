@@ -10,6 +10,7 @@ describe("recruitment configuration", () => {
     expect(positions.some((position) => position.slug === "volunteer-coordinator")).toBe(true);
     expect(positions.find((position) => position.slug === "event-ops-lead")?.eligibleYears).toEqual([3, 4]);
     expect(positions.find((position) => position.slug === "womens-participation-coordinator")?.eligibleYears).toEqual([3, 4]);
+    expect(positions.filter((position) => !["event-ops-lead", "womens-participation-coordinator"].includes(position.slug)).every((position) => position.eligibleYears.join(",") === "1,2,3,4")).toBe(true);
     expect(totalOpenings).toBe(18);
   });
 

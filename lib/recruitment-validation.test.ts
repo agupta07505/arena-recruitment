@@ -27,14 +27,17 @@ describe("isValidGender", () => {
 
 describe("isEligibleForPosition", () => {
   const designRole = positions.find((position) => position.slug === "graphic-designer")!;
+  const eventOpsLead = positions.find((position) => position.slug === "event-ops-lead")!;
 
-  it("accepts configured academic years", () => {
-    expect(isEligibleForPosition(1, designRole)).toBe(true);
-    expect(isEligibleForPosition(2, designRole)).toBe(true);
+  it("accepts every academic year for regular positions", () => {
+    [1, 2, 3, 4].forEach((year) => expect(isEligibleForPosition(year, designRole)).toBe(true));
   });
 
-  it("rejects unconfigured academic years", () => {
-    expect(isEligibleForPosition(3, designRole)).toBe(false);
+  it("keeps exclusive leadership positions limited to years 3 and 4", () => {
+    expect(isEligibleForPosition(1, eventOpsLead)).toBe(false);
+    expect(isEligibleForPosition(2, eventOpsLead)).toBe(false);
+    expect(isEligibleForPosition(3, eventOpsLead)).toBe(true);
+    expect(isEligibleForPosition(4, eventOpsLead)).toBe(true);
   });
 });
 
