@@ -80,7 +80,6 @@ export async function POST(request: Request) {
       work_links: workLinks,
     }).select("id").single();
 
-    if (error?.code === "23505") return Response.json({ ok: false, message: "This email has already submitted an application for the selected position." }, { status: 409 });
     if (error || !application) throw error ?? new Error("Application insert returned no record");
     return Response.json({ ok: true, message: "Application submitted", receipt: application.id.slice(0, 8).toUpperCase() });
   } catch (error) {

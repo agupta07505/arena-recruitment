@@ -153,7 +153,7 @@ export async function updateApplicantDetailsAction(input: z.infer<typeof applica
     relevant_experience: parsed.data.experience,
     work_links: parsed.data.workLinks,
   }).eq("id", parsed.data.applicationId);
-  if (error) return { ok: false, message: error.code === "23505" ? "That email already applied for this position." : error.message };
+  if (error) return { ok: false, message: error.message };
   revalidatePath("/staff");
   revalidatePath(`/staff/applications/${parsed.data.applicationId}`);
   return { ok: true, message: "Applicant details updated." };

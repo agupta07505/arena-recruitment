@@ -1,0 +1,1 @@
+drop index if exists public.applications_guest_email_position_unique;
