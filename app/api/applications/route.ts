@@ -3,17 +3,15 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { normalizeScholarId } from "@/lib/recruitment-validation";
 import { isTurnstileConfigured, verifyTurnstile } from "@/lib/turnstile";
 
-const degrees = ["B.Tech", "MCA", "M.Tech", "Ph.D"] as const;
-const genders = ["Male", "Female", "Third gender"] as const;
+const genders = ["Male", "Female"] as const;
 const btechBranches = ["CSE Core", "CSE AI", "CSE DS", "CSE CS", "CSE CPS", "IT", "MNC", "ECE", "PNC"] as const;
 
-const applicationSchema = z.object({
-  positionId: z.uuid(),
+export const applicationSchema = z.object({
+  positionIds: z.array(z.uuid()).min(1).max(4).refine((ids) => new Set(ids).size === ids.length),
   fullName: z.string().trim().min(2).max(120),
   scholarId: z.string().trim().min(4).max(24),
-  degree: z.enum(degrees),
-  branch: z.string().trim().min(1).max(100),
-  year: z.string().trim().min(1).max(40),
+  branch: z.enum(btechBranches),
+  year: z.enum(["1", "2", "3", "4"]),
   gender: z.enum(genders),
   phone: z.string().trim().min(7).max(24),
   email: z.email().max(254),
@@ -21,13 +19,6 @@ const applicationSchema = z.object({
   links: z.string().trim().max(4_000),
   turnstileToken: z.string().max(2_048).optional(),
   website: z.string().max(0).optional(),
-}).superRefine((value, context) => {
-  if (value.degree === "B.Tech" && !btechBranches.includes(value.branch as (typeof btechBranches)[number])) {
-    context.addIssue({ code: "custom", path: ["branch"], message: "Choose a listed B.Tech branch." });
-  }
-  if (value.degree === "B.Tech" && !["1", "2", "3", "4"].includes(value.year)) {
-    context.addIssue({ code: "custom", path: ["year"], message: "Choose a B.Tech year from 1 to 4." });
-  }
 });
 
 function parsePublicLinks(value: string) {
@@ -51,26 +42,29 @@ export async function POST(request: Request) {
     }
 
     const admin = createAdminClient();
-    const { data: position, error: positionError } = await admin
+    const { data: positions, error: positionError } = await admin
       .from("positions")
-      .select("id, campaign_id, is_active, campaign:campaigns(status, is_published, opens_at, closes_at)")
-      .eq("id", parsed.data.positionId)
-      .maybeSingle();
+      .select("id, campaign_id, is_active, eligible_years, campaign:campaigns(status, is_published, opens_at, closes_at)")
+      .in("id", parsed.data.positionIds);
     if (positionError) throw positionError;
-    const campaign = position?.campaign ? (Array.isArray(position.campaign) ? position.campaign[0] : position.campaign) : null;
+    if (!positions || positions.length !== parsed.data.positionIds.length) {
+      return Response.json({ ok: false, message: "One or more selected positions are unavailable." }, { status: 400 });
+    }
+    const campaignId = positions[0].campaign_id;
+    const campaign = positions[0].campaign ? (Array.isArray(positions[0].campaign) ? positions[0].campaign[0] : positions[0].campaign) : null;
     const now = Date.now();
-    if (!position?.is_active || !campaign?.is_published || campaign.status !== "open" || !campaign.opens_at || !campaign.closes_at || now < new Date(campaign.opens_at).getTime() || now > new Date(campaign.closes_at).getTime()) {
+    if (positions.some((position) => !position.is_active || position.campaign_id !== campaignId || !position.eligible_years.includes(Number(parsed.data.year))) || !campaign?.is_published || campaign.status !== "open" || !campaign.opens_at || !campaign.closes_at || now < new Date(campaign.opens_at).getTime() || now > new Date(campaign.closes_at).getTime()) {
       return Response.json({ ok: false, message: "Applications are not open right now." }, { status: 400 });
     }
 
-    const { data: application, error } = await admin.from("applications").insert({
-      campaign_id: position.campaign_id,
+    const applicationRows = positions.map((position) => ({
+      campaign_id: campaignId,
       position_id: position.id,
       applicant_id: null,
       status: "submitted",
       applicant_name: parsed.data.fullName,
       applicant_scholar_id: normalizeScholarId(parsed.data.scholarId),
-      applicant_degree: parsed.data.degree,
+      applicant_degree: "B.Tech",
       applicant_branch: parsed.data.branch,
       applicant_year: parsed.data.year,
       applicant_gender: parsed.data.gender,
@@ -78,10 +72,11 @@ export async function POST(request: Request) {
       applicant_email: parsed.data.email.toLowerCase(),
       relevant_experience: parsed.data.experience,
       work_links: workLinks,
-    }).select("id").single();
+    }));
+    const { data: applications, error } = await admin.from("applications").insert(applicationRows).select("id");
 
-    if (error || !application) throw error ?? new Error("Application insert returned no record");
-    return Response.json({ ok: true, message: "Application submitted", receipt: application.id.slice(0, 8).toUpperCase() });
+    if (error || !applications || applications.length !== applicationRows.length) throw error ?? new Error("Application insert returned an unexpected number of records");
+    return Response.json({ ok: true, message: "Applications submitted", receipt: applications.map((application) => application.id.slice(0, 8).toUpperCase()).join(" / ") });
   } catch (error) {
     console.error(`[application:${errorId}]`, error);
     return Response.json({ ok: false, message: `We could not save your application. Please try again. Reference: ${errorId}` }, { status: 500 });

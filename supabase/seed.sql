@@ -17,7 +17,8 @@ insert into public.positions (
   id, campaign_id, slug, title, division, summary, capacity, eligible_years, sort_order
 )
 values
-  ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'event-ops-lead', 'Event Ops Lead', 'operations', 'Own the run-of-show and lead crews from first call to final whistle.', 1, array[3]::smallint[], 10),
+  ('20000000-0000-4000-8000-000000000001', '10000000-0000-4000-8000-000000000001', 'event-ops-lead', 'Event Ops Lead', 'operations', 'Own the run-of-show and lead crews from first call to final whistle.', 1, array[3,4]::smallint[], 10),
+  ('20000000-0000-4000-8000-000000000010', '10000000-0000-4000-8000-000000000001', 'womens-participation-coordinator', 'Women''s Participation Coordinator', 'operations', 'Create welcoming pathways for women to participate, compete, volunteer, and lead across A.R.E.N.A events.', 1, array[3,4]::smallint[], 15),
   ('20000000-0000-4000-8000-000000000002', '10000000-0000-4000-8000-000000000001', 'event-coordination-logistics', 'Event Coordination & Logistics', 'operations', 'Turn schedules, venues, equipment, and people into seamless match days.', 5, array[2]::smallint[], 20),
   ('20000000-0000-4000-8000-000000000003', '10000000-0000-4000-8000-000000000001', 'esports-coordinator', 'eSports Coordinator', 'esports', 'Operate brackets, lobbies, broadcasts, and fair competitive play.', 2, array[2]::smallint[], 30),
   ('20000000-0000-4000-8000-000000000004', '10000000-0000-4000-8000-000000000001', 'graphic-designer', 'Graphic Designer', 'creative', 'Build the visual language behind campaigns, match days, and stories.', 2, array[1,2]::smallint[], 40),
