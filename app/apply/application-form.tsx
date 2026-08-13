@@ -79,12 +79,12 @@ export function ApplicationForm({ positions, initialPosition }: { positions: Pub
       <div className={styles.fields}>
         <label className={styles.wide}>Year *<select name="year" onChange={(event) => changeYear(event.target.value)} required value={year}><option disabled value="">Select year</option>{[1,2,3,4].map((item) => <option key={item} value={item}>Year {item}</option>)}</select><small>Your year determines which positions you can apply for.</small></label>
         <fieldset aria-required="true" className={styles.wide}>
-          <legend>Positions * <em>Select up to 4</em></legend>
+          <legend>Positions *</legend>
           {!year ? <p className={styles.positionHint}>Choose your year first to see eligible positions.</p> : <div className={styles.positionGrid}>{eligiblePositions.map((position) => {
             const checked = selectedPositionIds.includes(position.id);
             return <label key={position.id}><input checked={checked} disabled={!checked && selectedPositionIds.length >= 4} name="positionIds" onChange={() => togglePosition(position.id)} type="checkbox" value={position.id} /><span>{position.title}<small>{position.division}</small></span></label>;
           })}</div>}
-          {year && <small>{selectedPositionIds.length} of 4 positions selected.</small>}
+          {year && <small>You can select more than one position.</small>}
         </fieldset>
       </div>
     </section>
